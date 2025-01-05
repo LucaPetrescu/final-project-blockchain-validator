@@ -11,7 +11,7 @@ import './structs/Market.sol';
 
 contract CoreBetting {
     mapping(uint256 => Market) public markets;
-    mapping(uint256 => mapping(address => Belt)) public userBets;
+    mapping(uint256 => mapping(address => Bet)) public userBets;
 
     uint256 public marketCount;
 

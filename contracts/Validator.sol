@@ -20,4 +20,7 @@ contract Validator is ChainlinkClient, Ownable {
     event OutcomeRequested(uint256 marketId, bytes requestId);
     event OutcomeValidated(uint256 marketId, bool outcome);
 
+    constructor() Ownable(msg.sender) {
+    }
+
 }

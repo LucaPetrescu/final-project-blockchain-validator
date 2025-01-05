@@ -11,3 +11,20 @@ REPORT_GAS=true npx hardhat test
 npx hardhat node
 npx hardhat ignition deploy ./ignition/modules/Lock.js
 ```
+
+
+
+# Alexandru Visarion's readme
+Clean:
+npx hardhat clean
+Compile:
+npx hardhat compile
+
+
+Run contract:
+source .env
+npx hardhat run scripts/deploy_liquidity_pool.ts --network polygonAmoy
+
+Run tesst:
+npx hardhat test
+
