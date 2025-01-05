@@ -3,15 +3,13 @@ const {
   abi,
 } = require("../artifacts/contracts/HelloWorld.sol/HelloWorld.json");
 
-const provider = new ethers.providers.JsonRpcProvider(
-  process.env.LOCAL_PROVIDER
-);
+const provider = new ethers.JsonRpcProvider(process.env.LOCAL_PROVIDER);
 
 require("dotenv").config();
 
 const wallet = provider.getSigner();
 
-const contractAddress = process.env.CONTRACT_ADDRESS;
+const contractAddress = process.env.HELLO_WORLD_CONTRACT_ADDRESS;
 
 const contract = new ethers.Contract(contractAddress, abi, wallet);
 

@@ -1,10 +1,10 @@
-const hre = require("hardhat");
+const { ethers } = require("hardhat");
 
 async function main() {
-  const [deployer] = await hre.ethers.getSigners();
+  const [deployer] = await ethers.getSigners();
   console.log(`Deploying contracts with account: ${deployer.address}`);
 
-  const HelloWord = await hre.ethers.getContractFactory("HelloWorld");
+  const HelloWord = await ethers.getContractFactory("HelloWorld");
   const helloWorld = await HelloWord.deploy("Hello, Local World");
 
   await helloWorld.waitForDeployment();
