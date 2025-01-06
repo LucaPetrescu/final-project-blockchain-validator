@@ -1,19 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-// import "@uma/core/contracts/optimistic-oracle-v2/interfaces/OptimisticOracleV2Interface.sol";
-// import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "hardhat/console.sol";
 
 import "./structs/Market.sol";
-
 import "./structs/Bet.sol";
 import { Verifier } from "./Verifier.sol";
 import { LiquidityPool } from "./LiquidityPool.sol";
 import { Validator } from "./Validator.sol";
-
-
 
 contract CoreBetting  {
 
@@ -36,38 +30,52 @@ contract CoreBetting  {
         validator = Validator(validatorAddress);
     }
 
-    function createMarket(string calldata description, uint256 resolutionTimestamp, 
+    function createMarket(
+        string calldata description, 
+        uint256 resolutionTimestamp, 
         uint256[2] calldata a,
         uint256[2][2] calldata b,
         uint256[2] calldata c,
-        uint256[1] calldata inputs) external {
+        uint256[1] calldata inputs
+    ) external {
         require(resolutionTimestamp > block.timestamp, "Resolution time must be in the future.");
 
+        // Verify the proof using the Verifier contract
         bool isValid = verifier.verifyProof(a, b, c, inputs);
         require(isValid, "Invalid proof");
 
-        markets[marketCount++] = Market({
-            description: description,
-            resolutionTimestamp: resolutionTimestamp,
-            marketID: marketCount -1,
-            bets: new Bet[]
-        });
+        // Store the current market ID before incrementing
+        uint256 currentMarketId = marketCount;
 
-        emit MarketCreated(marketCount - 1, description, resolutionTimestamp);
+        // Initialize the Market struct without setting the bets array
+        Market storage newMarket = markets[currentMarketId];
+        newMarket.description = description;
+        newMarket.resolutionTimestamp = resolutionTimestamp;
+        newMarket.marketID = currentMarketId;
+        // The bets array is automatically initialized as empty
+
+        // Increment the market count for the next market
+        marketCount++;
+
+        // Emit the MarketCreated event
+        emit MarketCreated(currentMarketId, description, resolutionTimestamp);
     }
 
-    function createBet(string calldata description, uint256 marketID) external{
+    function createBet(string calldata description, uint256 marketID) external {
         uint256 betCount = markets[marketID].bets.length;
 
-        Bet storage bet = Bet({
+        // Initialize a new Bet struct
+        Bet memory bet = Bet({
             betID: betCount,
             description: description,
-            totalYes:0,
-            totalNo:0,
-            creator:msg.sender,
-            resolved:false,
-            outcome:false
+            totalYes: 0,
+            totalNo: 0,
+            creator: msg.sender,
+            resolved: false,
+            outcome: false
         });
+
+        // Add the bet to the market's bets array
         markets[marketID].bets.push(bet);
 
         emit BetCreated(betCount, description);
@@ -78,7 +86,14 @@ contract CoreBetting  {
         require(block.timestamp < market.resolutionTimestamp, "Betting period is over.");
         require(msg.value > 0, "Bet amount must be greater than zero.");
 
+        // Here you would typically update the bet totals based on the choice
+        // For example:
+        if (choice) {
+            market.bets[marketId].totalYes += msg.value;
+        } else {
+            market.bets[marketId].totalNo += msg.value;
+        }
+
         emit BetPlaced(marketId, msg.sender, msg.value, choice);
     }
-    
 }
