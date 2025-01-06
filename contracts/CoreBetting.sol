@@ -12,6 +12,8 @@ import { Verifier } from "./Verifier.sol";
 contract CoreBetting  {
 
     mapping(uint256 => Market) public markets;
+    mapping(uint256 => mapping(address => Bet)) public userBets;
+
     uint256 public marketCount;
 
     Verifier public verifier;
