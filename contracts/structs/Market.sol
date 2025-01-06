@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.18;
+import "./Bet.sol";
 
 struct Market {
     string description;
     uint256 resolutionTimestamp;
-    uint256 totalYes;
-    uint256 totalNo;
-    address creator;
-    bool resolved;
-    bool outcome;
+    uint256 marketID;
+
+    Bet[] bets;
 }

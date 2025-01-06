@@ -29,9 +29,13 @@ npx hardhat run scripts/deploy.js --network sepolia
 
 # Alexandru Visarion's readme
 Clean:
+npm install
 npx hardhat clean
 Compile:
 npx hardhat compile
+
+Local test:
+npx hardhat node
 
 
 Run contract:

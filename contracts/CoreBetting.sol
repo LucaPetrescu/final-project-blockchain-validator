@@ -4,9 +4,15 @@ pragma solidity ^0.8.18;
 // import "@uma/core/contracts/optimistic-oracle-v2/interfaces/OptimisticOracleV2Interface.sol";
 // import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 // import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
 
 import "./structs/Market.sol";
+
+import "./structs/Bet.sol";
 import { Verifier } from "./Verifier.sol";
+import { LiquidityPool } from "./LiquidityPool.sol";
+import { Validator } from "./Validator.sol";
+
 
 
 contract CoreBetting  {
@@ -17,12 +23,17 @@ contract CoreBetting  {
     uint256 public marketCount;
 
     Verifier public verifier;
+    LiquidityPool public liquidityPool;
+    Validator public validator;
 
     event MarketCreated(uint256 marketId, string description, uint256 resolutionTimestamp);
+    event BetCreated(uint256 betID, string description);
     event BetPlaced(uint256 marketId, address user, uint256 amount, bool choice);
     
-    constructor(address verifierAddress) {
+    constructor(address verifierAddress, address liquidityPoolAddress, address validatorAddress) {
         verifier = Verifier(verifierAddress);
+        liquidityPool = LiquidityPool(payable(liquidityPoolAddress));
+        validator = Validator(validatorAddress);
     }
 
     function createMarket(string calldata description, uint256 resolutionTimestamp, 
@@ -38,15 +49,28 @@ contract CoreBetting  {
         markets[marketCount++] = Market({
             description: description,
             resolutionTimestamp: resolutionTimestamp,
-            totalYes: 0,
-            totalNo: 0,
-            creator: msg.sender,
-            resolved: false,
-            outcome: false
+            marketID: marketCount -1,
+            bets: new Bet[]
         });
 
         emit MarketCreated(marketCount - 1, description, resolutionTimestamp);
+    }
 
+    function createBet(string calldata description, uint256 marketID) external{
+        uint256 betCount = markets[marketID].bets.length;
+
+        Bet storage bet = Bet({
+            betID: betCount,
+            description: description,
+            totalYes:0,
+            totalNo:0,
+            creator:msg.sender,
+            resolved:false,
+            outcome:false
+        });
+        markets[marketID].bets.push(bet);
+
+        emit BetCreated(betCount, description);
     }
 
     function placeBet(uint256 marketId, bool choice) external payable {

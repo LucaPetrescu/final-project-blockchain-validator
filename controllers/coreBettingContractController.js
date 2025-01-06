@@ -9,7 +9,7 @@ const provider = new ethers.JsonRpcProvider(process.env.LOCAL_PROVIDER);
 
 require("dotenv").config();
 
-const privateKey = process.env.PRIVATE_KEY;
+const privateKey = process.env.LOCAL_PRIVATE_KEY;
 
 const wallet = new ethers.Wallet(privateKey, provider);
 
@@ -37,7 +37,7 @@ exports.createMarket = async (req, res) => {
     );
     await tx.wait();
 
-    res.send({ success: true, txHash: tx.hash, proofObj });
+    res.send({ success: true, txHash: tx.hash });
   } catch (error) {
     res.status(500).send({ success: false, error: error.message });
   }
