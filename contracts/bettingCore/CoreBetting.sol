@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -27,7 +26,7 @@ interface ILiquidityPool {
  * @title CoreBetting
  * @dev Implements the core betting functionality with support for oracle and liquidity pool integration
  */
-contract CoreBetting is ReentrancyGuard, Ownable {
+contract CoreBetting is  Ownable {
     // Represents the current state of a bet
     enum BetState { Created, Active, Settled, Cancelled }
     
@@ -69,7 +68,7 @@ contract CoreBetting is ReentrancyGuard, Ownable {
         address _bettingToken,
         address _oracle,
         address _liquidityPool
-    ) {
+    ) Ownable(msg.sender) {
         bettingToken = IERC20(_bettingToken);
         oracle = IBetOracle(_oracle);
         liquidityPool = ILiquidityPool(_liquidityPool);
@@ -85,7 +84,7 @@ contract CoreBetting is ReentrancyGuard, Ownable {
         string memory eventId,
         uint256 amount,
         bool prediction
-    ) external nonReentrant returns (uint256) {
+    ) external returns (uint256) {
         require(amount > 0, "Amount must be greater than 0");
         
         // Transfer tokens from creator
@@ -123,7 +122,7 @@ contract CoreBetting is ReentrancyGuard, Ownable {
     function takePosition(
         uint256 betId,
         bool prediction
-    ) external nonReentrant {
+    ) external {
         Bet storage bet = bets[betId];
         require(bet.state == BetState.Created, "Bet not available");
         
@@ -154,7 +153,7 @@ contract CoreBetting is ReentrancyGuard, Ownable {
      * @dev Settles a bet after oracle provides outcome
      * @param betId ID of the bet to settle
      */
-    function settleBet(uint256 betId) external nonReentrant {
+    function settleBet(uint256 betId) external {
         Bet storage bet = bets[betId];
         require(bet.state == BetState.Active, "Bet not active");
         
