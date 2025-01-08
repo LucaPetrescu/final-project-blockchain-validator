@@ -96,4 +96,12 @@ contract CoreBetting  {
 
         emit BetPlaced(marketId, msg.sender, msg.value, choice);
     }
+
+    function getMarket(uint256 marketId) external {
+
+    }
+    function getMarketBets(uint256 marketId) external {
+
+    }
 }
+
