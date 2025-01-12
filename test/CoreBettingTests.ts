@@ -1,10 +1,10 @@
-import { CoreBetting, Verifier, Validator, LiquidityPool, MockVerifier } from "../typechain-types";
+import { CoreBetting, Verifier, Validator, LiquidityPoolContainer, MockVerifier } from "../typechain-types";
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("CoreBetting", function () {
-  let liquidityPool: LiquidityPool;
+  let liquidityPoolContainer: LiquidityPoolContainer;
 
   let  coreBetting: CoreBetting;
   let mockVerifier:MockVerifier;
@@ -28,14 +28,14 @@ describe("CoreBetting", function () {
     console.log(`verifier deployed to: ${verifierAddress}`);
       
 
-    const LiquidityPool = await ethers.getContractFactory("LiquidityPool");
+    const LiquidityPoolContainer = await ethers.getContractFactory("LiquidityPoolContainer");
     // Deploy the contract
-    liquidityPool = await LiquidityPool.deploy(2, 10);
+    liquidityPoolContainer = await LiquidityPoolContainer.deploy(2, 10);
     // Wait for the deployment to complete
-    await liquidityPool.waitForDeployment();
-    let liquidityPoolAddress = liquidityPool.target;
+    await liquidityPoolContainer.waitForDeployment();
+    let liquidityPoolContainerAddress = liquidityPoolContainer.target;
 
-    console.log(`LiquidityPool deployed to: ${liquidityPool.target}`);
+    console.log(`LiquidityPoolContainer deployed to: ${liquidityPoolContainer.target}`);
 
     const Validator = await ethers.getContractFactory("Validator");
     validator = await Validator.deploy();
@@ -48,7 +48,7 @@ describe("CoreBetting", function () {
     // Deploy the contract
 
     const CoreBetting = await ethers.getContractFactory("CoreBetting");
-    coreBetting = await CoreBetting.deploy(verifierAddress, liquidityPoolAddress, validatorAddress);
+    coreBetting = await CoreBetting.deploy(verifierAddress, liquidityPoolContainerAddress, validatorAddress);
 
 
     // Wait for the deployment to complete
