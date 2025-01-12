@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+import { LiquidityPool } from "./LiquidityPool.sol";
+
 struct Bet {
     uint256 betID;
     string description;
-    uint256 totalYes;
-    uint256 totalNo;
+    string liquidityPoolKey;
     address creator;
     bool resolved;
 

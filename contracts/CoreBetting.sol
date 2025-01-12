@@ -6,7 +6,9 @@ import "hardhat/console.sol";
 import "./structs/Market.sol";
 import "./structs/Bet.sol";
 import { Verifier } from "./Verifier.sol";
-import { LiquidityPool } from "./LiquidityPool.sol";
+import { LiquidityPoolContainer } from "./LiquidityPoolContainer.sol";
+import { Outcome } from "./structs/LiquidityPool.sol";
+
 import { Validator } from "./Validator.sol";
 import "./interfaces/IVerifier.sol";
 
@@ -21,16 +23,16 @@ contract CoreBetting  {
 
 
     IVerifier public verifier;
-    LiquidityPool public liquidityPool;
+    LiquidityPoolContainer public liquidityPoolContainer;
     Validator public validator;
 
     event MarketCreated(uint256 marketId, string description, uint256 resolutionTimestamp);
     event BetCreated(uint256 betID, string description);
     event BetPlaced(uint256 marketId, address user, uint256 amount, bool choice);
     
-    constructor(address verifierAddress, address liquidityPoolAddress, address validatorAddress) {
+    constructor(address verifierAddress, address liquidityPoolContainerAddress, address validatorAddress) {
         verifier = Verifier(verifierAddress);
-        liquidityPool = LiquidityPool(payable(liquidityPoolAddress));
+        liquidityPoolContainer = LiquidityPoolContainer(payable(liquidityPoolContainerAddress));
         validator = Validator(validatorAddress);
     }
 
@@ -74,8 +76,7 @@ contract CoreBetting  {
         Bet memory bet = Bet({
             betID: betCount,
             description: description,
-            totalYes: 0,
-            totalNo: 0,
+            liquidityPoolKey: string(abi.encodePacked(marketID, ":", betCount)), 
             creator: msg.sender,
             resolved: false,
             outcome: false
@@ -87,7 +88,7 @@ contract CoreBetting  {
         emit BetCreated(++betCount, description);
     }
 
-    function placeBet(uint256 marketId, bool choice) external payable {
+    function placeBet(uint256 marketId, uint256 betId, bool choice) external payable {
         Market storage market = markets[marketId];
         require(block.timestamp < market.resolutionTimestamp, "Betting period is over.");
         require(msg.value > 0, "Bet amount must be greater than zero.");
@@ -95,9 +96,9 @@ contract CoreBetting  {
         // Here you would typically update the bet totals based on the choice
         // For example:
         if (choice) {
-            market.bets[marketId].totalYes += msg.value;
+            liquidityPoolContainer.buySharesForOutcome(market.bets[betId].liquidityPoolKey, Outcome.Outcome1);
         } else {
-            market.bets[marketId].totalNo += msg.value;
+            liquidityPoolContainer.buySharesForOutcome(market.bets[betId].liquidityPoolKey, Outcome.Outcome2);
         }
 
         emit BetPlaced(marketId, msg.sender, msg.value, choice);
