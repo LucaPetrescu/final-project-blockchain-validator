@@ -72,8 +72,6 @@ contract CoreBetting  {
     function createBet(string calldata description, uint256 marketID) external {
         require(marketID < marketCount, "Invalid ID");
         uint256 betCount = markets[marketID].bets.length;
-        console.log("betCount:");
-        console.log(betCount);
 
         // Initialize a new Bet struct
         Bet memory bet = Bet({
@@ -87,7 +85,6 @@ contract CoreBetting  {
 
         // Add the bet to the market's bets array
         markets[marketID].bets.push(bet);
-        console.log(betCount);
         emit BetCreated(betCount, description);
     }
 

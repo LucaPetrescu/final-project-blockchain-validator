@@ -164,6 +164,18 @@ contract LiquidityPoolContainer is ERC20, Ownable {
         return slope * supply + intercept;
     }
 
+    function getTotalLiquidity(string memory liquidityPoolKey) public view returns (uint256) {
+        LiquidityPool storage liquidityPool = liquidityPools[liquidityPoolKey];
+
+        return liquidityPool.totalLiquidity;
+    }
+
+    function getUserShares(string memory liquidityPoolKey, address user, Outcome outcome) public view returns (uint256) {
+        LiquidityPool storage liquidityPool = liquidityPools[liquidityPoolKey];
+
+        return liquidityPool.userShares[user][outcome];
+    }
+
     // Fallback function to accept Ether deposits
     receive() external payable {}
 }

@@ -185,6 +185,8 @@ describe("CoreBetting", function () {
       const tx2 = await expect(coreBetting.connect(user1).createBet(eventId2, 0))
                 .to.emit(coreBetting, "BetCreated")
                 .withArgs(1, eventId2);
+      const marketBets = await coreBetting.getMarketBets(0);
+      expect(marketBets.length, 2);
     });
 
   });
