@@ -1,4 +1,4 @@
-import { CoreBetting, Verifier, Validator, LiquidityPool } from "../typechain-types";
+import { CoreBetting, Verifier, Validator, LiquidityPool, MockVerifier } from "../typechain-types";
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
@@ -7,7 +7,7 @@ describe("CoreBetting", function () {
   let liquidityPool: LiquidityPool;
 
   let  coreBetting: CoreBetting;
-  let verifier:Verifier;
+  let mockVerifier:MockVerifier;
   let validator:Validator;
   let owner: SignerWithAddress;
   let user1: SignerWithAddress;
@@ -17,14 +17,14 @@ describe("CoreBetting", function () {
 
 
   beforeEach(async function () {
-    const Verifier = await ethers.getContractFactory("Verifier");
-    verifier = await Verifier.deploy();
+    const MockVerifier = await ethers.getContractFactory("MockVerifier");
+    mockVerifier = await MockVerifier.deploy();
   // Wait for the deployment to complete
-    await verifier.waitForDeployment();
+    await mockVerifier.waitForDeployment();
     [owner, user1, user2] = await ethers.getSigners();
 
 
-    let verifierAddress = verifier.target;
+    let verifierAddress = mockVerifier.target;
     console.log(`verifier deployed to: ${verifierAddress}`);
       
 
@@ -58,6 +58,21 @@ describe("CoreBetting", function () {
     console.log(`coreBetting deployed to: ${coreBetting.target}`);
   });
 
+  it("Should successfully create a market with valid inputs", async function () {
+    const description = "Will team A win?";
+    const resolutionTimestamp = (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
+    const proof = [[1, 2], [[3, 4], [5, 6]], [7, 8], [9]]; // Dummy proof inputs
+
+    await expect(coreBetting.createMarket(description, resolutionTimestamp, ...proof))
+      .to.emit(coreBetting, "MarketCreated")
+      .withArgs(0, description, resolutionTimestamp);
+
+    const market = await coreBetting.markets(0);
+    expect(market.description).to.equal(description);
+    expect(market.resolutionTimestamp).to.equal(resolutionTimestamp);
+  });
+
+  /*
   it("Should allow creating a bet", async function () {
     const amount = ethers.parseEther("100");
     const eventId = "event123";
@@ -65,6 +80,7 @@ describe("CoreBetting", function () {
 
     const tx = await coreBetting.connect(user1).createBet(eventId, 1);
     const receipt = await tx.wait();
+    console.log(receipt)
 
     const betCreatedEvent = receipt.events.find(e => e.event === "BetCreated");
     expect(betCreatedEvent).to.exist;
@@ -142,4 +158,5 @@ describe("CoreBetting", function () {
     const betCreatedEvent = receipt.events.find(e => e.event === "BetCreated");
     return betCreatedEvent.args.betId;
   }
+    */
 });

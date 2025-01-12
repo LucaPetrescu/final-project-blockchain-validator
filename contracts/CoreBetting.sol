@@ -8,6 +8,8 @@ import "./structs/Bet.sol";
 import { Verifier } from "./Verifier.sol";
 import { LiquidityPool } from "./LiquidityPool.sol";
 import { Validator } from "./Validator.sol";
+import "./interfaces/IVerifier.sol";
+
 
 contract CoreBetting  {
 
@@ -16,7 +18,7 @@ contract CoreBetting  {
 
     uint256 public marketCount;
 
-    Verifier public verifier;
+    IVerifier public verifier;
     LiquidityPool public liquidityPool;
     Validator public validator;
 

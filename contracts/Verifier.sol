@@ -18,11 +18,13 @@
     along with snarkJS. If not, see <https://www.gnu.org/licenses/>.
 */
 import "hardhat/console.sol";
+import "./interfaces/IVerifier.sol";
+
 
 
 pragma solidity >=0.7.0 <0.9.0;
 
-contract Verifier {
+contract Verifier is IVerifier{
     // Scalar field size
     uint256 constant r    = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
     // Base field size
