@@ -57,44 +57,98 @@ describe("CoreBetting", function () {
 
     console.log(`coreBetting deployed to: ${coreBetting.target}`);
   });
+  describe("createMarket", function () {
+    it("Should successfully create a market with valid inputs", async function () {
+      const description = "Will team A win?";
+      const resolutionTimestamp = (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
+      const proof = [[1, 2], [[3, 4], [5, 6]], [7, 8], [9]]; // Dummy proof inputs
+      mockVerifier.setMockResult(true);
 
-  it("Should successfully create a market with valid inputs", async function () {
-    const description = "Will team A win?";
-    const resolutionTimestamp = (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
-    const proof = [[1, 2], [[3, 4], [5, 6]], [7, 8], [9]]; // Dummy proof inputs
+      await expect(coreBetting.createMarket(description, resolutionTimestamp, ...proof))
+        .to.emit(coreBetting, "MarketCreated")
+        .withArgs(0, description, resolutionTimestamp);
 
-    await expect(coreBetting.createMarket(description, resolutionTimestamp, ...proof))
-      .to.emit(coreBetting, "MarketCreated")
-      .withArgs(0, description, resolutionTimestamp);
+      const market = await coreBetting.getMarket(0);
+      expect(market.description).to.equal(description);
+      expect(market.resolutionTimestamp).to.equal(resolutionTimestamp);
 
-    const market = await coreBetting.markets(0);
-    expect(market.description).to.equal(description);
-    expect(market.resolutionTimestamp).to.equal(resolutionTimestamp);
+    });
+
+    it("Should successfully two markets with valid inputs", async function () {
+      const description = "Will team A win?";
+      const resolutionTimestamp = (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
+      const proof = [[1, 2], [[3, 4], [5, 6]], [7, 8], [9]]; // Dummy proof inputs
+      mockVerifier.setMockResult(true);
+
+      await expect(coreBetting.createMarket(description, resolutionTimestamp, ...proof))
+        .to.emit(coreBetting, "MarketCreated")
+        .withArgs(0, description, resolutionTimestamp);
+
+      const market = await coreBetting.getMarket(0);
+      expect(market.description).to.equal(description);
+      expect(market.resolutionTimestamp).to.equal(resolutionTimestamp);
+
+      const description2 = "Will team B win?";
+      mockVerifier.setMockResult(true);
+
+      await expect(coreBetting.createMarket(description2, resolutionTimestamp, ...proof))
+        .to.emit(coreBetting, "MarketCreated")
+        .withArgs(1, description2, resolutionTimestamp);
+
+      const market2 = await coreBetting.getMarket(1);
+      expect(market2.description).to.equal(description2);
+      expect(market2.resolutionTimestamp).to.equal(resolutionTimestamp);
+
+    });
+
+    it("Should fail when creating a market with invalid inputs", async function () {
+      const description = "Will team A win?";
+      const resolutionTimestamp = (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
+      const proof = [[1, 2], [[3, 4], [5, 6]], [7, 8], [9]]; // Dummy proof inputs
+
+      mockVerifier.setMockResult(false);
+
+      await expect(coreBetting.createMarket(description, resolutionTimestamp, ...proof))
+        .to.be.revertedWith("Invalid proof");
+
+    });
+
+    it("Fetch market successful", async function () {
+      const description = "Will team A win?";
+      const resolutionTimestamp = (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
+      const proof = [[1, 2], [[3, 4], [5, 6]], [7, 8], [9]]; // Dummy proof inputs
+      mockVerifier.setMockResult(true);
+
+      await expect(coreBetting.createMarket(description, resolutionTimestamp, ...proof))
+        .to.emit(coreBetting, "MarketCreated")
+        .withArgs(0, description, resolutionTimestamp);
+
+      const market = await coreBetting.getMarket(0);
+      expect(market.description).to.equal(description);
+      expect(market.resolutionTimestamp).to.equal(resolutionTimestamp);
+    });
+
   });
 
-  /*
+
   it("Should allow creating a bet", async function () {
-    const amount = ethers.parseEther("100");
     const eventId = "event123";
-    const prediction = true;
 
-    const tx = await coreBetting.connect(user1).createBet(eventId, 1);
-    const receipt = await tx.wait();
-    console.log(receipt)
-
-    const betCreatedEvent = receipt.events.find(e => e.event === "BetCreated");
-    expect(betCreatedEvent).to.exist;
-
-    const betId = betCreatedEvent.args.betId;
-    const betDetails = await coreBetting.getBetDetails(betId);
-
-    expect(betDetails.eventId).to.equal(eventId);
-    expect(betDetails.creator).to.equal(user1.address);
-    expect(betDetails.amount).to.equal(amount);
-    expect(betDetails.creatorPrediction).to.equal(prediction);
-    expect(betDetails.state).to.equal(0); // Created state
+    const tx = await expect(coreBetting.connect(user1).createBet(eventId, 2))
+              .to.emit(coreBetting, "BetCreated")
+              .withArgs(1, eventId);
   });
 
+  it("Should return the correct Market struct", async function () {
+    const marketId = 1;
+
+    // Call the getMarket function
+    const market = await expect(coreBetting.getMarket(marketId))
+                  .to.be.revertedWith("Invalid ID");;
+
+  });
+
+    /*
   it("Should allow taking a position", async function () {
     const betId = await setupBet();
 
@@ -158,5 +212,5 @@ describe("CoreBetting", function () {
     const betCreatedEvent = receipt.events.find(e => e.event === "BetCreated");
     return betCreatedEvent.args.betId;
   }
-    */
-});
+  */
+}); 

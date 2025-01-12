@@ -13,10 +13,12 @@ import "./interfaces/IVerifier.sol";
 
 contract CoreBetting  {
 
-    mapping(uint256 => Market) public markets;
-    mapping(uint256 => mapping(address => Bet)) public userBets;
+    mapping(uint256 => Market) private markets;
+    uint256 private marketCount;
 
-    uint256 public marketCount;
+    mapping(uint256 => mapping(address => Bet)) private userBets;
+
+
 
     IVerifier public verifier;
     LiquidityPool public liquidityPool;
@@ -54,6 +56,8 @@ contract CoreBetting  {
         newMarket.description = description;
         newMarket.resolutionTimestamp = resolutionTimestamp;
         newMarket.marketID = currentMarketId;
+
+        markets[currentMarketId] = newMarket;
         // The bets array is automatically initialized as empty
 
         // Increment the market count for the next market
@@ -80,7 +84,7 @@ contract CoreBetting  {
         // Add the bet to the market's bets array
         markets[marketID].bets.push(bet);
 
-        emit BetCreated(betCount, description);
+        emit BetCreated(++betCount, description);
     }
 
     function placeBet(uint256 marketId, bool choice) external payable {
@@ -99,11 +103,23 @@ contract CoreBetting  {
         emit BetPlaced(marketId, msg.sender, msg.value, choice);
     }
 
-    function getMarket(uint256 marketId) external {
-
+    function getMarket(uint256 marketId) external view returns (Market memory){
+        console.log(marketCount);
+        require(marketId < marketCount, "Invalid ID");
+        return markets[marketId];
     }
-    function getMarketBets(uint256 marketId) external {
 
+    function getMarkets() external view returns (Market[] memory){
+        Market[] memory marketArray = new Market[](marketCount);
+        for (uint256 i = 0; i < marketCount; i++) {
+            marketArray[i] = markets[i];  // Fetching each market by ID
+        }
+
+        return marketArray;
+    }
+
+    function getMarketBets(uint256 marketId) external view returns (Bet[] memory){
+        return markets[marketId].bets;
     }
 }
 
