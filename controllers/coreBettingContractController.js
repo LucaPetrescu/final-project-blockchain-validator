@@ -55,3 +55,38 @@ exports.placeBet = async (req, res) => {
     res.status(500).send({ success: false, error: error.message });
   }
 };
+
+exports.getMarkets = async (req, res) => {
+  try {
+    const tx = await coreBetting.getMarkets();
+    await tx.wait();
+    res.send({ success: true, txHash: tx.hash });
+  } catch (error) {
+    res.status(500).send({ success: false, error: error.message });
+  }
+};
+
+exports.getMarket = async (req, res) => {
+  const { marketId } = req.body;
+
+  try {
+    const tx = await coreBetting.getMarket(marketId);
+    await tx.wait();
+    res.send({ success: true, txHash: tx.hash });
+  } catch (error) {
+    res.status(500).send({ success: false, error: error.message });
+  }
+};
+
+exports.getMarketBets = async (req, res) => {
+  const { marketId } = req.body;
+
+  try {
+    const tx = await coreBetting.getMarket(marketId);
+    await tx.wait();
+
+    res.send({ success: true, txHash: tx.hash });
+  } catch (error) {
+    res.status(500).send({ success: false, error: error.message });
+  }
+};
