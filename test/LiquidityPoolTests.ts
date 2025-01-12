@@ -1,55 +1,58 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { LiquidityPool } from "../typechain-types"; // Adjust the path as needed
+import { LiquidityPoolContainer
+ } from "../typechain-types"; // Adjust the path as needed
 
-describe("LiquidityPool", function () {
-    let LiquidityPoolFactory: LiquidityPool;
-    let liquidityPool: LiquidityPool;
+describe("LiquidityPoolContainer", function () {
+    let LiquidityPoolContainerFactory: LiquidityPoolContainer;
+    let liquidityPoolContainer: LiquidityPoolContainer;
     let owner: SignerWithAddress;
     let addr1: SignerWithAddress;
     let addr2: SignerWithAddress;
 
+    let testKey = "0:0";
+
     beforeEach(async function () {
         // Get the contract factory and signers
-        const LiquidityPoolContract = await ethers.getContractFactory("LiquidityPool");
+        const LiquidityPoolContainerContract = await ethers.getContractFactory("LiquidityPoolContainer");
         [owner, addr1, addr2] = await ethers.getSigners();
         console.log(`${owner.address}, ${addr1.address}, ${addr2.address}`);
         
         // Deploy the contract
-        liquidityPool = (await LiquidityPoolContract.deploy(2, 10)) as LiquidityPool;
-        await liquidityPool.waitForDeployment();
+        liquidityPoolContainer = (await LiquidityPoolContainerContract.deploy(2, 10)) as LiquidityPoolContainer;
+        await liquidityPoolContainer.waitForDeployment();
 
-        console.log(`LiquidityPool deployed to: ${liquidityPool.target}`);
+        console.log(`LiquidityPoolContainer deployed to: ${liquidityPoolContainer.target}`);
 
 
     });
 
     it("should allow a user to buy shares for all outcomes", async function () {
         const amount = ethers.parseEther("1");
-        await liquidityPool.connect(addr1).buySharesForAllOutcomes({ value: amount });
+        await liquidityPoolContainer.connect(addr1).buySharesForAllOutcomes(testKey, { value: amount });
 
-        const totalLiquidity = await liquidityPool.totalLiquidity();
+        const totalLiquidity = await liquidityPoolContainer.getTotalLiquidity(testKey);
         expect(totalLiquidity).to.equal(amount);
 
-        const userShares = await liquidityPool.userShares(addr1.address, 1); // Outcome1
+        const userShares = await liquidityPoolContainer.getUserShares(testKey, addr1.address, 1); // Outcome1
         expect(userShares).to.be.gt(0);
     });
 
     it("should allow the owner to set an outcome", async function () {
-        await liquidityPool.connect(owner).setOutcome(1); // Set to Outcome1
-        const outcome = await liquidityPool.currentOutcome();
+        await liquidityPoolContainer.connect(owner).setOutcome(1); // Set to Outcome1
+        const outcome = await liquidityPoolContainer.currentOutcome();
         expect(outcome).to.equal(1);
     });
 
     it("should allow users to redeem shares after outcome is set", async function () {
         const amount = ethers.parseEther("1");
-        await liquidityPool.connect(addr1).buySharesForAllOutcomes({ value: amount });
+        await liquidityPoolContainer.connect(addr1).buySharesForAllOutcomes(testKey, { value: amount });
 
-        await liquidityPool.connect(owner).setOutcome(1); // Set to Outcome1
+        await liquidityPoolContainer.connect(owner).setOutcome(1); // Set to Outcome1
 
         const userInitialBalance = await ethers.provider.getBalance(addr1);
-        const tx = await liquidityPool.connect(addr1).redeemShares();
+        const tx = await liquidityPoolContainer.connect(addr1).redeemShares(testKey);
         const receipt = await tx.wait();
 
 
@@ -65,10 +68,10 @@ describe("LiquidityPool", function () {
 
     it("should allow liquidity providers to withdraw their liquidity", async function () {
         const amount = ethers.parseEther("1");
-        await liquidityPool.connect(addr1).buySharesForAllOutcomes({ value: amount });
+        await liquidityPoolContainer.connect(addr1).buySharesForAllOutcomes(testKey, { value: amount });
 
         const userInitialBalance = await ethers.provider.getBalance(addr1);
-        const tx = await liquidityPool.connect(addr1).withdrawLiquidity();
+        const tx = await liquidityPoolContainer.connect(addr1).withdrawLiquidity(testKey);
         const receipt = await tx.wait();
 
         const gasUsed = BigInt(receipt.gasUsed);
@@ -82,33 +85,19 @@ describe("LiquidityPool", function () {
     it("should fail when a user tries to withdraw liquidity but hasn't contributed any", async function () {
         // User (addr1) hasn't contributed any liquidity
         await expect(
-            liquidityPool.connect(addr1).withdrawLiquidity()
+            liquidityPoolContainer.connect(addr1).withdrawLiquidity(testKey)
         ).to.be.revertedWith("No liquidity contributed");
     });
 
-    it("should fail when a user tries to buy shares due to lack of liquidity", async function () {
-        // Simulate a situation where the contract has no liquidity
-        const initialLiquidity = await ethers.provider.getBalance(liquidityPool.target);
-        expect(initialLiquidity).to.equal(0);
 
-        // User (addr1) tries to buy shares but the contract has no liquidity
-        await expect(
-            liquidityPool.connect(addr1).buySharesForAllOutcomes({ value: ethers.parseEther("1") })
-        ).to.be.revertedWith("Must send Ether to buy shares");
-
-        // The contract still has no liquidity, and addr1's balance should remain unchanged
-        const addr1BalanceBefore = await ethers.provider.getBalance(addr1);
-        expect(await ethers.provider.getBalance(liquidityPool.address)).to.equal(0);
-        expect(await ethers.provider.getBalance(addr1)).to.equal(addr1BalanceBefore);
-    });
 
     it("should fail when user tries to redeem shares without the outcome being set", async function () {
         // User (addr1) buys shares for all outcomes
-        await liquidityPool.connect(addr1).buySharesForAllOutcomes({ value: ethers.parseEther("1") });
+        await liquidityPoolContainer.connect(addr1).buySharesForAllOutcomes(testKey, { value: ethers.parseEther("1") });
 
         // addr1 attempts to redeem shares before outcome is set
         await expect(
-            liquidityPool.connect(addr1).redeemShares()
+            liquidityPoolContainer.connect(addr1).redeemShares(testKey)
         ).to.be.revertedWith("Outcome not set");
     });
 

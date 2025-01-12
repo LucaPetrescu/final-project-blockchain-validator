@@ -1,10 +1,10 @@
-import { CoreBetting, Verifier, Validator, LiquidityPool, MockVerifier } from "../typechain-types";
+import { CoreBetting, Verifier, Validator, LiquidityPoolContainer, MockVerifier } from "../typechain-types";
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("CoreBetting", function () {
-  let liquidityPool: LiquidityPool;
+  let liquidityPoolContainer: LiquidityPoolContainer;
 
   let  coreBetting: CoreBetting;
   let mockVerifier:MockVerifier;
@@ -28,14 +28,14 @@ describe("CoreBetting", function () {
     console.log(`verifier deployed to: ${verifierAddress}`);
       
 
-    const LiquidityPool = await ethers.getContractFactory("LiquidityPool");
+    const LiquidityPoolContainer = await ethers.getContractFactory("LiquidityPoolContainer");
     // Deploy the contract
-    liquidityPool = await LiquidityPool.deploy(2, 10);
+    liquidityPoolContainer = await LiquidityPoolContainer.deploy(2, 10);
     // Wait for the deployment to complete
-    await liquidityPool.waitForDeployment();
-    let liquidityPoolAddress = liquidityPool.target;
+    await liquidityPoolContainer.waitForDeployment();
+    let liquidityPoolContainerAddress = liquidityPoolContainer.target;
 
-    console.log(`LiquidityPool deployed to: ${liquidityPool.target}`);
+    console.log(`LiquidityPoolContainer deployed to: ${liquidityPoolContainer.target}`);
 
     const Validator = await ethers.getContractFactory("Validator");
     validator = await Validator.deploy();
@@ -48,7 +48,7 @@ describe("CoreBetting", function () {
     // Deploy the contract
 
     const CoreBetting = await ethers.getContractFactory("CoreBetting");
-    coreBetting = await CoreBetting.deploy(verifierAddress, liquidityPoolAddress, validatorAddress);
+    coreBetting = await CoreBetting.deploy(verifierAddress, liquidityPoolContainerAddress, validatorAddress);
 
 
     // Wait for the deployment to complete
@@ -128,25 +128,70 @@ describe("CoreBetting", function () {
       expect(market.resolutionTimestamp).to.equal(resolutionTimestamp);
     });
 
+    it("Should not return the correct Market struct", async function () {
+      const marketId = 1;
+  
+      // Call the getMarket function
+      const market = await expect(coreBetting.getMarket(marketId))
+                    .to.be.revertedWith("Invalid ID");;
+  
+    });
+
+  });
+
+  describe("createBet", function () {
+    it("Should not allow creating a bet", async function () {
+      const eventId = "event123";
+
+      const tx = await expect(coreBetting.connect(user1).createBet(eventId, 2))
+                .to.be.revertedWith("Invalid ID");
+    });
+    
+
+    it("Should allow creating a bet", async function () {
+      const description = "Will team A win?";
+      const resolutionTimestamp = (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
+      const proof = [[1, 2], [[3, 4], [5, 6]], [7, 8], [9]]; // Dummy proof inputs
+      mockVerifier.setMockResult(true);
+
+      await expect(coreBetting.createMarket(description, resolutionTimestamp, ...proof))
+        .to.emit(coreBetting, "MarketCreated")
+        .withArgs(0, description, resolutionTimestamp);
+
+      const eventId1 = "event123";
+
+      const tx = await expect(coreBetting.connect(user1).createBet(eventId1, 0))
+                .to.emit(coreBetting, "BetCreated")
+                .withArgs(0, eventId1);
+    });
+
+    it("Should allow creating two bets", async function () {
+      const description = "Will team A win?";
+      const resolutionTimestamp = (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
+      const proof = [[1, 2], [[3, 4], [5, 6]], [7, 8], [9]]; // Dummy proof inputs
+      mockVerifier.setMockResult(true);
+
+      await expect(coreBetting.createMarket(description, resolutionTimestamp, ...proof))
+        .to.emit(coreBetting, "MarketCreated")
+        .withArgs(0, description, resolutionTimestamp);
+
+      const eventId1 = "event123";
+      const eventId2 = "event456";
+
+
+      const tx = await expect(coreBetting.connect(user1).createBet(eventId1, 0))
+                .to.emit(coreBetting, "BetCreated")
+                .withArgs(0, eventId1);
+      const tx2 = await expect(coreBetting.connect(user1).createBet(eventId2, 0))
+                .to.emit(coreBetting, "BetCreated")
+                .withArgs(1, eventId2);
+      const marketBets = await coreBetting.getMarketBets(0);
+      expect(marketBets.length, 2);
+    });
+
   });
 
 
-  it("Should allow creating a bet", async function () {
-    const eventId = "event123";
-
-    const tx = await expect(coreBetting.connect(user1).createBet(eventId, 2))
-              .to.emit(coreBetting, "BetCreated")
-              .withArgs(1, eventId);
-  });
-
-  it("Should return the correct Market struct", async function () {
-    const marketId = 1;
-
-    // Call the getMarket function
-    const market = await expect(coreBetting.getMarket(marketId))
-                  .to.be.revertedWith("Invalid ID");;
-
-  });
 
     /*
   it("Should allow taking a position", async function () {
