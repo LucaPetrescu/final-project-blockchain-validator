@@ -128,25 +128,68 @@ describe("CoreBetting", function () {
       expect(market.resolutionTimestamp).to.equal(resolutionTimestamp);
     });
 
+    it("Should not return the correct Market struct", async function () {
+      const marketId = 1;
+  
+      // Call the getMarket function
+      const market = await expect(coreBetting.getMarket(marketId))
+                    .to.be.revertedWith("Invalid ID");;
+  
+    });
+
+  });
+
+  describe("createBet", function () {
+    it("Should not allow creating a bet", async function () {
+      const eventId = "event123";
+
+      const tx = await expect(coreBetting.connect(user1).createBet(eventId, 2))
+                .to.be.revertedWith("Invalid ID");
+    });
+    
+
+    it("Should allow creating a bet", async function () {
+      const description = "Will team A win?";
+      const resolutionTimestamp = (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
+      const proof = [[1, 2], [[3, 4], [5, 6]], [7, 8], [9]]; // Dummy proof inputs
+      mockVerifier.setMockResult(true);
+
+      await expect(coreBetting.createMarket(description, resolutionTimestamp, ...proof))
+        .to.emit(coreBetting, "MarketCreated")
+        .withArgs(0, description, resolutionTimestamp);
+
+      const eventId1 = "event123";
+
+      const tx = await expect(coreBetting.connect(user1).createBet(eventId1, 0))
+                .to.emit(coreBetting, "BetCreated")
+                .withArgs(0, eventId1);
+    });
+
+    it("Should allow creating two bets", async function () {
+      const description = "Will team A win?";
+      const resolutionTimestamp = (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
+      const proof = [[1, 2], [[3, 4], [5, 6]], [7, 8], [9]]; // Dummy proof inputs
+      mockVerifier.setMockResult(true);
+
+      await expect(coreBetting.createMarket(description, resolutionTimestamp, ...proof))
+        .to.emit(coreBetting, "MarketCreated")
+        .withArgs(0, description, resolutionTimestamp);
+
+      const eventId1 = "event123";
+      const eventId2 = "event456";
+
+
+      const tx = await expect(coreBetting.connect(user1).createBet(eventId1, 0))
+                .to.emit(coreBetting, "BetCreated")
+                .withArgs(0, eventId1);
+      const tx2 = await expect(coreBetting.connect(user1).createBet(eventId2, 0))
+                .to.emit(coreBetting, "BetCreated")
+                .withArgs(1, eventId2);
+    });
+
   });
 
 
-  it("Should allow creating a bet", async function () {
-    const eventId = "event123";
-
-    const tx = await expect(coreBetting.connect(user1).createBet(eventId, 2))
-              .to.emit(coreBetting, "BetCreated")
-              .withArgs(1, eventId);
-  });
-
-  it("Should return the correct Market struct", async function () {
-    const marketId = 1;
-
-    // Call the getMarket function
-    const market = await expect(coreBetting.getMarket(marketId))
-                  .to.be.revertedWith("Invalid ID");;
-
-  });
 
     /*
   it("Should allow taking a position", async function () {

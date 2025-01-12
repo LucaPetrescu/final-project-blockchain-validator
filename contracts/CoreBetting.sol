@@ -70,7 +70,10 @@ contract CoreBetting  {
     }
 
     function createBet(string calldata description, uint256 marketID) external {
+        require(marketID < marketCount, "Invalid ID");
         uint256 betCount = markets[marketID].bets.length;
+        console.log("betCount:");
+        console.log(betCount);
 
         // Initialize a new Bet struct
         Bet memory bet = Bet({
@@ -84,8 +87,8 @@ contract CoreBetting  {
 
         // Add the bet to the market's bets array
         markets[marketID].bets.push(bet);
-
-        emit BetCreated(++betCount, description);
+        console.log(betCount);
+        emit BetCreated(betCount, description);
     }
 
     function placeBet(uint256 marketId, uint256 betId, bool choice) external payable {
@@ -105,7 +108,6 @@ contract CoreBetting  {
     }
 
     function getMarket(uint256 marketId) external view returns (Market memory){
-        console.log(marketCount);
         require(marketId < marketCount, "Invalid ID");
         return markets[marketId];
     }
