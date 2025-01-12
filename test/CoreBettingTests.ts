@@ -99,6 +99,19 @@ describe("CoreBetting", function () {
       expect(market2.description).to.equal(description2);
       expect(market2.resolutionTimestamp).to.equal(resolutionTimestamp);
 
+
+      const markets = await coreBetting.getMarkets();
+      expect(markets.length, 2);
+      
+      const market0 = markets[0];
+      expect(market0.description).to.equal(description);
+      expect(market0.resolutionTimestamp).to.equal(resolutionTimestamp);
+
+      
+      const market1 = markets[1];
+      expect(market1.description).to.equal(description2);
+      expect(market1.resolutionTimestamp).to.equal(resolutionTimestamp);
+
     });
 
     it("Should fail when creating a market with invalid inputs", async function () {
@@ -187,6 +200,10 @@ describe("CoreBetting", function () {
                 .withArgs(1, eventId2);
       const marketBets = await coreBetting.getMarketBets(0);
       expect(marketBets.length, 2);
+
+      expect(marketBets[0].description, eventId1);
+      expect(marketBets[1].description, eventId2);
+
     });
 
   });
