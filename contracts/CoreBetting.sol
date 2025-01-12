@@ -121,5 +121,9 @@ contract CoreBetting  {
     function getMarketBets(uint256 marketId) external view returns (Bet[] memory){
         return markets[marketId].bets;
     }
+
+    //function getMarketBetPrices() external view returns ()
+    //function addLiquidity()
+    
 }
 
