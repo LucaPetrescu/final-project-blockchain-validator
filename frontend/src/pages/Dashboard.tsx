@@ -20,7 +20,9 @@ const Dashboard: React.FC = () => {
       try {
         const response: AxiosResponse = await axios.get(getMarkets);
         // setMarkets(response.data);
-      } catch (error) {}
+      } catch (error) {
+        console.error("Error fetching markets:", error);
+      }
     };
     fetchMarkets();
   }, []);

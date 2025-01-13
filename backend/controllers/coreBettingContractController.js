@@ -18,10 +18,22 @@ const contractAddress = process.env.CORE_BETTING_CONTRACT_ADDRESS;
 const coreBetting = new ethers.Contract(contractAddress, abi, wallet);
 
 exports.createMarket = async (req, res) => {
-  const { description, resolutionTimestamp } = req.body;
+  const { description, resolutionTimestamp, deadline } = req.body;
 
   try {
+    const futureTime = new Date();
+    futureTime.setHours(futureTime.getHours() + resolutionTimestamp);
+    const resolutionTimestampConverted = Math.floor(
+      futureTime.getTime() / 1000
+    );
+
+    const futureDeadline = new Date();
+    futureDeadline.setHours(futureDeadline.getHours() + deadline);
+    const deadlineConverted = Math.floor(futureDeadline.getTime() / 1000);
+
     const { proof, publicSignals } = await generateProof();
+
+    console.log(proof);
 
     const a = proof.pi_a.slice(0, 2);
     const b = [proof.pi_b[0].slice(0, 2), proof.pi_b[1].slice(0, 2)];
@@ -29,7 +41,8 @@ exports.createMarket = async (req, res) => {
 
     const tx = await coreBetting.createMarket(
       description,
-      resolutionTimestamp,
+      resolutionTimestampConverted,
+      deadlineConverted,
       a,
       b,
       c,
