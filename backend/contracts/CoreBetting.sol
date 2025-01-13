@@ -26,7 +26,7 @@ contract CoreBetting  {
     LiquidityPoolContainer public liquidityPoolContainer;
     Oracle public oracle;
 
-    event MarketCreated(uint256 marketId, string description, uint256 resolutionTimestamp, uint deadline);
+    event MarketCreated(uint256 marketId, string description, uint256 resolutionTimestamp);
     event BetCreated(uint256 betID, string description);
     event BetPlaced(uint256 marketId, address user, uint256 amount, bool choice);
     event BetResolved(uint256 marketId, uint256 betId, bool outcome);
