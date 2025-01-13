@@ -9,7 +9,7 @@ import { Verifier } from "./Verifier.sol";
 import { LiquidityPoolContainer } from "./LiquidityPoolContainer.sol";
 import { Outcome } from "./structs/LiquidityPool.sol";
 
-import { Validator } from "./Validator.sol";
+import { Oracle } from "./Oracle.sol";
 import "./interfaces/IVerifier.sol";
 
 
@@ -24,16 +24,17 @@ contract CoreBetting  {
 
     IVerifier public verifier;
     LiquidityPoolContainer public liquidityPoolContainer;
-    Validator public validator;
+    Oracle public oracle;
 
     event MarketCreated(uint256 marketId, string description, uint256 resolutionTimestamp, uint deadline);
     event BetCreated(uint256 betID, string description);
     event BetPlaced(uint256 marketId, address user, uint256 amount, bool choice);
+    event BetResolved(uint256 marketId, uint256 betId, bool outcome);
     
-    constructor(address verifierAddress, address liquidityPoolContainerAddress, address validatorAddress) {
+    constructor(address verifierAddress, address liquidityPoolContainerAddress, address oracleAddress) {
         verifier = Verifier(verifierAddress);
         liquidityPoolContainer = LiquidityPoolContainer(payable(liquidityPoolContainerAddress));
-        validator = Validator(validatorAddress);
+        oracle = Oracle(oracleAddress);
     }
 
     function createMarket(
@@ -85,6 +86,8 @@ contract CoreBetting  {
 
         // Add the bet to the market's bets array
         markets[marketID].bets.push(bet);
+        // Initialize oracle for this bet
+        oracle.initializeOracle(betCount);
         emit BetCreated(betCount, description);
     }
 
@@ -102,6 +105,41 @@ contract CoreBetting  {
         }
 
         emit BetPlaced(marketId, msg.sender, msg.value, choice);
+    }
+
+    function participateAsOracle(uint256 marketId, uint256 betId) external payable {
+        require(marketId < marketCount, "Invalid market ID");
+        require(betId < markets[marketId].bets.length, "Invalid bet ID");
+        
+        oracle.stake{value: msg.value}(betId);
+    }
+    // Oracle
+    function voteOnBetOutcome(uint256 marketId, uint256 betId, bool outcome) external {
+        require(marketId < marketCount, "Invalid market ID");
+        require(betId < markets[marketId].bets.length, "Invalid bet ID");
+        
+        oracle.vote(betId, outcome);
+    }
+    // Oracle
+    function resolveBet(uint256 marketId, uint256 betId) external {
+        Market storage market = markets[marketId];
+        require(block.timestamp >= market.resolutionTimestamp, "Resolution time not reached");
+        require(betId < market.bets.length, "Invalid bet ID");
+        require(!market.bets[betId].resolved, "Bet already resolved");
+
+        (bool outcome, bool finalized) = oracle.getConsensus(betId);
+        require(finalized, "Oracle consensus not reached");
+
+        market.bets[betId].resolved = true;
+        market.bets[betId].outcome = outcome;
+
+        if (outcome) {
+            liquidityPoolContainer.resolvePool(market.bets[betId].liquidityPoolKey, Outcome.Outcome1);
+        } else {
+            liquidityPoolContainer.resolvePool(market.bets[betId].liquidityPoolKey, Outcome.Outcome2);
+        }
+
+        emit BetResolved(marketId, betId, outcome);
     }
 
     function getMarket(uint256 marketId) external view returns (Market memory){
