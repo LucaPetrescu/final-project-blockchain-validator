@@ -1,8 +1,8 @@
 import React from "react";
-
+import { Link } from "react-router-dom";
 interface CardProps {
   market: {
-    id: string;
+    id: number;
     description: string;
     deadline: string;
   };
@@ -15,6 +15,9 @@ const Card: React.FC<CardProps> = ({ market }) => {
       <div className="mt-4 text-gray-400 text-sm">
         <p>{market.deadline}</p>
       </div>
+      <Link to={`/market`} className="text-blue-500 hover:underline">
+        View Details{" "}
+      </Link>
       <div className="flex justify-between items-center mt-4"></div>
     </div>
   );

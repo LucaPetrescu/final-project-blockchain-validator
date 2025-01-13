@@ -7,19 +7,19 @@ import { getMarkets } from "../utils/utils.ts";
 import { Link, useLocation } from "react-router-dom";
 
 interface Market {
-  marketId: string;
+  marketId: number;
   description: string;
   deadline: string;
 }
 
 const Dashboard: React.FC = () => {
-  const [markets, setMarkets] = useState<Market[]>([]);
-
+  // const [markets, setMarkets] = useState<Market[]>([]);
+  // setMarkets(markets);
   useEffect(() => {
     const fetchMarkets = async () => {
       try {
         const response: AxiosResponse = await axios.get(getMarkets);
-        setMarkets(response.data);
+        // setMarkets(response.data);
       } catch (error) {}
     };
     fetchMarkets();
@@ -33,7 +33,7 @@ const Dashboard: React.FC = () => {
           {markets.map((market, index) => (
             <Card
               market={{
-                id: market.marketId,
+                id: market.id,
                 description: market.description,
                 deadline: market.deadline,
               }}
