@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
 import Navbar from "./components/Navbar.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
+import MarketDetails from "./pages/MarketDetails.tsx";
 
 const App: React.FC = () => {
   return (
@@ -12,6 +13,7 @@ const App: React.FC = () => {
         <Router>
           <Routes>
             <Route path="/" element={<Dashboard />}></Route>
+            <Route path="/market" element={<MarketDetails />}></Route>
           </Routes>
         </Router>
       </div>

@@ -7,6 +7,7 @@ struct Market {
     string description;
     uint256 resolutionTimestamp;
     uint256 marketID;
+    uint256 deadline;
 
     Bet[] bets;
 }
