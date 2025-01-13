@@ -71,8 +71,7 @@ describe("CoreBetting", function () {
       const description = "Will team A win?";
       const resolutionTimestamp =
         (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
-      const deadline =
-        (await ethers.provider.getBlock("latest")).timestamp + 7200;
+
       const proof = [
         [1, 2],
         [
@@ -88,12 +87,12 @@ describe("CoreBetting", function () {
         coreBetting.createMarket(
           description,
           resolutionTimestamp,
-          deadline,
+
           ...proof
         )
       )
         .to.emit(coreBetting, "MarketCreated")
-        .withArgs(0, description, resolutionTimestamp, deadline);
+        .withArgs(0, description, resolutionTimestamp);
 
       const market = await coreBetting.getMarket(0);
       expect(market.description).to.equal(description);
@@ -104,8 +103,7 @@ describe("CoreBetting", function () {
       const description = "Will team A win?";
       const resolutionTimestamp =
         (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
-      const deadline =
-        (await ethers.provider.getBlock("latest")).timestamp + 7200;
+
       const proof = [
         [1, 2],
         [
@@ -121,12 +119,12 @@ describe("CoreBetting", function () {
         coreBetting.createMarket(
           description,
           resolutionTimestamp,
-          deadline,
+
           ...proof
         )
       )
         .to.emit(coreBetting, "MarketCreated")
-        .withArgs(0, description, resolutionTimestamp, deadline);
+        .withArgs(0, description, resolutionTimestamp);
 
       const market = await coreBetting.getMarket(0);
       expect(market.description).to.equal(description);
@@ -139,12 +137,12 @@ describe("CoreBetting", function () {
         coreBetting.createMarket(
           description2,
           resolutionTimestamp,
-          deadline,
+
           ...proof
         )
       )
         .to.emit(coreBetting, "MarketCreated")
-        .withArgs(1, description2, resolutionTimestamp, deadline);
+        .withArgs(1, description2, resolutionTimestamp);
 
       const market2 = await coreBetting.getMarket(1);
       expect(market2.description).to.equal(description2);
@@ -166,8 +164,7 @@ describe("CoreBetting", function () {
       const description = "Will team A win?";
       const resolutionTimestamp =
         (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
-      const deadline =
-        (await ethers.provider.getBlock("latest")).timestamp + 7200;
+
       const proof = [
         [1, 2],
         [
@@ -184,7 +181,7 @@ describe("CoreBetting", function () {
         coreBetting.createMarket(
           description,
           resolutionTimestamp,
-          deadline,
+
           ...proof
         )
       ).to.be.revertedWith("Invalid proof");
@@ -194,8 +191,7 @@ describe("CoreBetting", function () {
       const description = "Will team A win?";
       const resolutionTimestamp =
         (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
-      const deadline =
-        (await ethers.provider.getBlock("latest")).timestamp + 7200;
+
       const proof = [
         [1, 2],
         [
@@ -211,12 +207,12 @@ describe("CoreBetting", function () {
         coreBetting.createMarket(
           description,
           resolutionTimestamp,
-          deadline,
+
           ...proof
         )
       )
         .to.emit(coreBetting, "MarketCreated")
-        .withArgs(0, description, resolutionTimestamp, deadline);
+        .withArgs(0, description, resolutionTimestamp);
 
       const market = await coreBetting.getMarket(0);
       expect(market.description).to.equal(description);
@@ -246,8 +242,7 @@ describe("CoreBetting", function () {
       const description = "Will team A win?";
       const resolutionTimestamp =
         (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
-      const deadline =
-        (await ethers.provider.getBlock("latest")).timestamp + 7200;
+
       const proof = [
         [1, 2],
         [
@@ -263,12 +258,12 @@ describe("CoreBetting", function () {
         coreBetting.createMarket(
           description,
           resolutionTimestamp,
-          deadline,
+
           ...proof
         )
       )
         .to.emit(coreBetting, "MarketCreated")
-        .withArgs(0, description, resolutionTimestamp, deadline);
+        .withArgs(0, description, resolutionTimestamp);
 
       const eventId1 = "event123";
 
@@ -281,8 +276,7 @@ describe("CoreBetting", function () {
       const description = "Will team A win?";
       const resolutionTimestamp =
         (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
-      const deadline =
-        (await ethers.provider.getBlock("latest")).timestamp + 7200;
+
       const proof = [
         [1, 2],
         [
@@ -298,12 +292,12 @@ describe("CoreBetting", function () {
         coreBetting.createMarket(
           description,
           resolutionTimestamp,
-          deadline,
+
           ...proof
         )
       )
         .to.emit(coreBetting, "MarketCreated")
-        .withArgs(0, description, resolutionTimestamp, deadline);
+        .withArgs(0, description, resolutionTimestamp);
 
       const eventId1 = "event123";
       const eventId2 = "event456";
