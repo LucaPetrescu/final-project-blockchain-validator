@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 enum Outcome { None,Outcome1, Outcome2}  // Define possible outcomes for the prediction market
 struct LiquidityPool {
+    Outcome finalOutcome;
     // Tracks the amount of shares bought per outcome
     mapping(Outcome => uint256)  sharesBought;
 

@@ -64,8 +64,11 @@ contract LiquidityPoolContainer is ERC20, Ownable {
     }
 
     // Function to set the outcome (only owner can do this)
-    function setOutcome(Outcome outcome) external onlyOwner {
+    function resolvePool(string memory liquidityPoolKey, Outcome outcome) external onlyOwner {
         require(outcome != Outcome.None, "Invalid outcome");
+        LiquidityPool storage liquidityPool = liquidityPools[liquidityPoolKey];
+    
+        liquidityPool.finalOutcome = outcome;
         currentOutcome = outcome;
         emit OutcomeSet(outcome);
     }
