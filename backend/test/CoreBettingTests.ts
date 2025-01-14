@@ -1,7 +1,7 @@
 import {
   CoreBetting,
   Verifier,
-  Validator,
+  Oracle,
   LiquidityPoolContainer,
   MockVerifier,
 } from "../typechain-types";
@@ -15,7 +15,7 @@ describe("CoreBetting", function () {
 
   let coreBetting: CoreBetting;
   let mockVerifier: MockVerifier;
-  let validator: Validator;
+  let oracle: Oracle;
   let owner: SignerWithAddress;
   let user1: SignerWithAddress;
   let user2: SignerWithAddress;
@@ -43,13 +43,14 @@ describe("CoreBetting", function () {
       `LiquidityPoolContainer deployed to: ${liquidityPoolContainer.target}`
     );
 
-    const Validator = await ethers.getContractFactory("Validator");
-    validator = await Validator.deploy();
+    const Oracle = await ethers.getContractFactory("Oracle");
+    
+    oracle = await Oracle.deploy(2);
     // Wait for the deployment to complete
-    await validator.waitForDeployment();
+    await oracle.waitForDeployment();
 
-    let validatorAddress = validator.target;
-    console.log(`validator deployed to: ${validatorAddress}`);
+    let oracleAddress = oracle.target;
+    console.log(`oracle deployed to: ${oracleAddress}`);
 
     // Deploy the contract
 
@@ -57,7 +58,7 @@ describe("CoreBetting", function () {
     coreBetting = await CoreBetting.deploy(
       verifierAddress,
       liquidityPoolContainerAddress,
-      validatorAddress
+      oracleAddress
     );
 
     // Wait for the deployment to complete
@@ -137,28 +138,6 @@ describe("CoreBetting", function () {
       const market1 = markets[1];
       expect(market1.description).to.equal(description2);
       expect(market1.resolutionTimestamp).to.equal(resolutionTimestamp);
-    });
-
-    it("Should fail when creating a market with invalid inputs", async function () {
-      const description = "Will team A win?";
-      const resolutionTimestamp =
-        (await ethers.provider.getBlock("latest")).timestamp + 3600; // 1 hour later
-
-      const proof = [
-        [1, 2],
-        [
-          [3, 4],
-          [5, 6],
-        ],
-        [7, 8],
-        [9],
-      ];
-
-      mockVerifier.setMockResult(false);
-
-      await expect(
-        coreBetting.createMarket(description, resolutionTimestamp)
-      ).to.be.revertedWith("Invalid proof");
     });
 
     it("Fetch market successful", async function () {

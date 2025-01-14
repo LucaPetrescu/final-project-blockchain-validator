@@ -40,7 +40,7 @@ describe("LiquidityPoolContainer", function () {
     });
 
     it("should allow the owner to set an outcome", async function () {
-        await liquidityPoolContainer.connect(owner).setOutcome(1); // Set to Outcome1
+        await liquidityPoolContainer.connect(owner).resolvePool(testKey,1); // Set to Outcome1
         const outcome = await liquidityPoolContainer.currentOutcome();
         expect(outcome).to.equal(1);
     });
@@ -49,7 +49,7 @@ describe("LiquidityPoolContainer", function () {
         const amount = ethers.parseEther("1");
         await liquidityPoolContainer.connect(addr1).buySharesForAllOutcomes(testKey, { value: amount });
 
-        await liquidityPoolContainer.connect(owner).setOutcome(1); // Set to Outcome1
+        await liquidityPoolContainer.connect(owner).resolvePool(testKey,1); // Set to Outcome1
 
         const userInitialBalance = await ethers.provider.getBalance(addr1);
         const tx = await liquidityPoolContainer.connect(addr1).redeemShares(testKey);
