@@ -100,9 +100,9 @@ contract CoreBetting  {
         // Here you would typically update the bet totals based on the choice
         // For example:
         if (choice) {
-            liquidityPoolContainer.buySharesForOutcome(market.bets[betId].liquidityPoolKey, Outcome.Outcome1);
+            liquidityPoolContainer.buySharesForOutcome {value: msg.value}(market.bets[betId].liquidityPoolKey, Outcome.Outcome1);
         } else {
-            liquidityPoolContainer.buySharesForOutcome(market.bets[betId].liquidityPoolKey, Outcome.Outcome2);
+            liquidityPoolContainer.buySharesForOutcome{value: msg.value}(market.bets[betId].liquidityPoolKey, Outcome.Outcome2);
         }
 
         emit BetPlaced(marketId, msg.sender, msg.value, choice);
@@ -174,6 +174,15 @@ contract CoreBetting  {
     function getReward(uint256 marketId, uint256 betId) external payable {
         string memory liquidityPoolKey = markets[marketId].bets[betId].liquidityPoolKey;
         liquidityPoolContainer.redeemShares(liquidityPoolKey);
+    }
+
+    receive() external payable {
+        // This function must be declared payable to accept Ether
+        // Optionally, handle any accounting or events here
+    }
+
+    fallback() external payable {
+        // This function can remain empty or you can add logic for unknown calls.
     }
     
 }

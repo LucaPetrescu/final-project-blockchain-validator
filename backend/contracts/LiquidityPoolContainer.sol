@@ -12,10 +12,9 @@ contract LiquidityPoolContainer is ERC20, Ownable {
     mapping(string => LiquidityPool) private liquidityPools;
 
     Outcome public currentOutcome;  // The outcome of the event (set by the owner)
-    //uint256 public totalLiquidity;  // Total liquidity in the contract
-        // Bonding curve parameters
-    uint256 public slope;  // Slope (a) for the linear bonding curve
-    uint256 public intercept;  // Intercept (b) for the linear bonding curve
+
+
+    uint256 private scalingFactor = 1000000000000000000;
 
 
     // Tracks the amount of shares bought per outcome
@@ -31,9 +30,8 @@ contract LiquidityPoolContainer is ERC20, Ownable {
     event LiquidityWithdrawn(address indexed to, uint256 amount);
     event LiquidityEarned(address indexed liquidityProvider, uint256 earnedAmount);
 
-    constructor(uint256 _slope, uint256 _intercept) ERC20("LiquidityPoolToken", "BPDAVISI") Ownable(msg.sender) {
-        slope = _slope;
-        intercept = _intercept;
+    constructor() ERC20("LiquidityPoolToken", "BPDAVISI") Ownable(msg.sender) {
+
     }
 
 
@@ -132,14 +130,17 @@ contract LiquidityPoolContainer is ERC20, Ownable {
     function buySharesForOutcome(string memory liquidityPoolKey, Outcome outcome) external payable {
         require(outcome != Outcome.None, "Invalid outcome");
         require(msg.value > 0, "Must send Ether to buy shares");
+        console.log(msg.value);
 
         LiquidityPool storage liquidityPool = liquidityPools[liquidityPoolKey];
 
+        uint256 fee = (msg.value * 5) / 100;
+        uint256 netValue = msg.value - fee;
+
         uint256 price = computeOutcomePrice(liquidityPoolKey, outcome);
-        uint256 shares = msg.value / price;
+        uint256 shares = netValue / price;
 
         require(shares > 0, "Insufficient value to buy shares");
-        
 
         // Mint the shares based on the calculated price
         _mint(msg.sender, shares);
@@ -153,6 +154,20 @@ contract LiquidityPoolContainer is ERC20, Ownable {
         // Add liquidity to the contract
         liquidityPool.totalLiquidity += msg.value;
         liquidityPool.liquidityContributed[msg.sender] += msg.value;
+
+
+        uint256 totalShareCost = price*shares;
+        // Repay user any leftover fees
+        if(totalShareCost < netValue) {
+            
+            uint256 refund = netValue - totalShareCost;
+            console.log(refund);
+
+            console.log(address(this).balance);
+            (bool success, bytes memory data) = msg.sender.call{value: refund}("");
+            console.logBytes(data);
+            require(success, "Refund failed");
+        }
 
         emit SharesPurchased(msg.sender, 
                              outcome == Outcome.Outcome1 ? shares : 0, 
@@ -168,6 +183,9 @@ contract LiquidityPoolContainer is ERC20, Ownable {
         Outcome contraOutcome =(outcome == Outcome.Outcome1? Outcome.Outcome2 : Outcome.Outcome1);
         uint256 contraSupply = liquidityPool.sharesBought[contraOutcome];
 
+        if(supply + contraSupply == 0) {
+            return scalingFactor / 2;
+        }
 
         return supply /(supply + contraSupply);
     }

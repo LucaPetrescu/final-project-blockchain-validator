@@ -34,7 +34,7 @@ describe("CoreBetting", function () {
       "LiquidityPoolContainer"
     );
     // Deploy the contract
-    liquidityPoolContainer = await LiquidityPoolContainer.deploy(2, 10);
+    liquidityPoolContainer = await LiquidityPoolContainer.deploy();
     // Wait for the deployment to complete
     await liquidityPoolContainer.waitForDeployment();
     let liquidityPoolContainerAddress = liquidityPoolContainer.target;
@@ -250,21 +250,27 @@ describe("CoreBetting", function () {
     });
   });
 
-  /*
-  it("Should allow taking a position", async function () {
-    const betId = await setupBet();
+  it("Should allow a user to place a bet with ETH", async function () {
+    // Create a market
+    const resolutionTime = Math.floor(Date.now() / 1000) + 3600;
+    await coreBetting.createMarket("Market #1", resolutionTime);
 
-    const entryPrice = ethers.parseEther("50");
-    await pool.setEntryPrice(betId, entryPrice);
+    // Create a bet in that market
+    await coreBetting.createBet("Bet #1", 0);
 
-    await expect(coreBetting.connect(user2).takePosition(betId, false))
-      .to.emit(coreBetting, "PositionTaken")
-      .withArgs(betId, user2.address, entryPrice, false, entryPrice);
+    // Place a bet from user1
+    await expect(
+      coreBetting.connect(user1).placeBet(0, 0, true, {
+        value: ethers.parseEther("9"),
+      })
+    )
+      .to.emit(coreBetting, "BetPlaced")
+      .withArgs(0, user1.address, ethers.parseEther("9"), true);
 
-    const betDetails = await coreBetting.getBetDetails(betId);
-    expect(betDetails.totalPool).to.equal(ethers.parseEther("150"));
+    // Optionally, verify something about the liquidity pool or user’s balance
+    // e.g., call mock "liquidityPoolContainer" functions or track events
   });
-
+/*
   it("Should settle a bet correctly", async function () {
     const betId = await setupBet();
     await coreBetting.connect(user2).takePosition(betId, false);
