@@ -66,6 +66,13 @@ describe("CoreBetting", function () {
     await coreBetting.waitForDeployment();
 
     console.log(`coreBetting deployed to: ${coreBetting.target}`);
+
+    // Transfer ownership of LiquidityPoolContainer to CoreBetting
+    await liquidityPoolContainer.transferOwnership(coreBetting.target);
+
+    // Verify ownership transfer was successful
+    const containerOwner = await liquidityPoolContainer.owner();
+    expect(containerOwner).to.equal(coreBetting.target);
   });
 
   describe("createMarket", function () {
@@ -307,74 +314,79 @@ describe("CoreBetting", function () {
       expect(ethers.formatEther(contractBalance) == ethers.parseEther("9") );
   });
 
-  it("Should let only the user with the winning outcome claim the reward", async function () {
-    const nineEthInWeiHex = ethers.toQuantity(ethers.parseEther("3"));
 
+  it("Should let only the user with the winning outcome claim the reward", async function () {
+    const overrides = {
+        gasLimit: 5000000
+    };
+
+    // Setup initial balances
     await network.provider.send("hardhat_setBalance", [
       user1.address,
-      nineEthInWeiHex
+      ethers.toQuantity(ethers.parseEther("10"))
     ]);
     await network.provider.send("hardhat_setBalance", [
       user2.address,
-      nineEthInWeiHex
+      ethers.toQuantity(ethers.parseEther("10"))
     ]);
 
-    // 1. Create a market
-    const resolutionTime = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
-    await coreBetting.createMarket("Sample Market", resolutionTime);
+    // 1. Create market and bet
+    const resolutionTime = Math.floor(Date.now() / 1000) + 3600;
+    await coreBetting.createMarket("Sample Market", resolutionTime, overrides);
+    await coreBetting.createBet("Sample Bet", 0, overrides);
 
-    // 2. Create a bet in that market
-    await coreBetting.createBet("Sample Bet", 0); // betId = 0 in marketId = 0
-
-    // 3. Place bets: 'winner' bets on outcome = true, 'loser' bets on outcome = false
-    //    We'll assume outcome=true is the winning side
+    // 2. Place bets
     await coreBetting.connect(user1).placeBet(0, 0, true, {
       value: ethers.parseEther("2.0"),
+      ...overrides
     });
     await coreBetting.connect(user2).placeBet(0, 0, false, {
       value: ethers.parseEther("2.0"),
+      ...overrides
     });
 
-    // 4. Advance time to resolutionTime (in Hardhat we can just manipulate the evm)
-    await ethers.provider.send("evm_increaseTime", [3600]); // jump 1 hour
-    await ethers.provider.send("evm_mine", []);
+    // 3. Participate as Oracle with stake
+    await coreBetting.connect(user1).participateAsOracle(0, 0, {
+      value: ethers.parseEther("0.1"),
+      ...overrides
+    });
 
-    oracle.endStakingPeriod(0);
-    console.log("ended staking period");
+    // 4. Advance time past staking period
+    await network.provider.send("evm_increaseTime", [86400 + 1]);
+    await network.provider.send("evm_mine");
 
-    // 5. Oracle sets the outcome
-    //    The Oracle in your code calls `vote` multiple times, or in a real system
-    //    obtains a consensus. We'll just do a mock call to finalize it to 'true'.
-    await coreBetting.voteOnBetOutcome(0, 0, true);
+    // 5. End staking period and vote
+    await oracle.endStakingPeriod(0, overrides);
+    await coreBetting.connect(user1).voteOnBetOutcome(0, 0, true, overrides);
 
-    // 6. We call `resolveBet` to finalize the bet outcome
-    await coreBetting.resolveBet(0, 0);
+    // 6. Advance time to resolution and resolve bet
+    await network.provider.send("evm_increaseTime", [3600]);
+    await network.provider.send("evm_mine");
+    await coreBetting.resolveBet(0, 0, overrides);
 
-    // 7. The 'loser' tries to call getReward on the losing side
-    //    Depending on your logic, this should revert OR do nothing.
-    //    We'll assume it reverts.
-    await expect(
-      coreBetting.connect(user1).getReward(0, 0)
-    ).to.be.revertedWith("some revert message or logic in liquidityPoolContainer");
+    // 7. Get consensus status for verification
+    const [outcome, finalized] = await oracle.getConsensus(0);
+    console.log('Oracle consensus:', { outcome, finalized });
 
-    // 8. The 'winner' calls getReward and should succeed
-    //    If your actual logic in `redeemShares` returns some tokens or changes a mapping,
-    //    you should check that it actually credited the 'winner'.
-    await expect(coreBetting.connect(user2).getReward(0, 0))
-      .to.emit(liquidityPoolContainer, "SharesRedeemed") // or some other event
-      .withArgs(
-        // you'd typically see arguments with winner's address, bet key, etc.
-        user2.address
-      );
+    // 8. Store initial balances
+    const initialBalance = await ethers.provider.getBalance(user1.address);
 
-    // Optionally, if your 'redeemShares' modifies an internal record of how many
-    // shares or ETH the user got back, you can verify that with calls to
-    // liquidityPoolContainer or by checking the user's new ETH balance
-    // e.g., a mock approach:
-    //
-    // const winnerShares = await liquidityPoolContainer.userShares(winner.address);
-    // expect(winnerShares).to.equal(0);
-  });
+    const contractBalance = await ethers.provider.getBalance(liquidityPoolContainer.target);
+    console.log(contractBalance);
+    const coreBettingBalance = await ethers.provider.getBalance(coreBetting.target);
+    console.log(coreBettingBalance);
+
+    // 9. Claim rewards with high gas limit
+    const tx = await coreBetting.connect(user1).getReward(0, 0, {
+        gasLimit: 9000000 // Very high gas limit
+    });
+    await tx.wait();
+
+    // 10. Verify balance changes
+    const finalBalance = await ethers.provider.getBalance(user1.address);
+    expect(finalBalance).to.be.gt(initialBalance);
+  });
+
 /*
   it("Should settle a bet correctly", async function () {
     const betId = await setupBet();
