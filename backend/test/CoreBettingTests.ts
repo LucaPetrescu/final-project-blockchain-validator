@@ -277,8 +277,34 @@ describe("CoreBetting", function () {
 
       const contractBalance = await ethers.provider.getBalance(liquidityPoolContainer.target);
       expect(ethers.formatEther(contractBalance) == ethers.parseEther("9") );
-    // Optionally, verify something about the liquidity pool or user’s balance
-    // e.g., call mock "liquidityPoolContainer" functions or track events
+  });
+
+  it("Should allow a user to create liquidity", async function () {
+    const nineEthInWeiHex = ethers.toQuantity(ethers.parseEther("10"));
+
+    await network.provider.send("hardhat_setBalance", [
+      user1.address,
+      nineEthInWeiHex
+    ]);
+
+    // Create a market
+    const resolutionTime = Math.floor(Date.now() / 1000) + 3600;
+    await coreBetting.createMarket("Market #1", resolutionTime);
+
+    // Create a bet in that market
+    await coreBetting.createBet("Bet #1", 0);
+
+    // Place a bet from user1
+    await expect(
+      coreBetting.connect(user1).addLiquidity(0, 0, {
+        value: ethers.parseEther("9"),
+      })
+    )
+      .to.emit(coreBetting, "LiquidityCreated")
+      .withArgs(0, 0, user1.address, ethers.parseEther("9"));
+
+      const contractBalance = await ethers.provider.getBalance(liquidityPoolContainer.target);
+      expect(ethers.formatEther(contractBalance) == ethers.parseEther("9") );
   });
 /*
   it("Should settle a bet correctly", async function () {
