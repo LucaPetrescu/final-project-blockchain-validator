@@ -135,7 +135,7 @@ contract LiquidityPoolContainer is ERC20, Ownable {
 
         LiquidityPool storage liquidityPool = liquidityPools[liquidityPoolKey];
 
-        uint256 price = calculatePrice(liquidityPoolKey, outcome);
+        uint256 price = computeOutcomePrice(liquidityPoolKey, outcome);
         uint256 shares = msg.value / price;
 
         require(shares > 0, "Insufficient value to buy shares");
@@ -159,12 +159,17 @@ contract LiquidityPoolContainer is ERC20, Ownable {
                              outcome == Outcome.Outcome2 ? shares : 0);
     }
 
-    // Calculate the price based on the linear bonding curve
-    function calculatePrice(string memory liquidityPoolKey, Outcome outcome) public view returns (uint256) {
+    // Calculate the price based on the Proportional Market Maker approach
+    function computeOutcomePrice(string memory liquidityPoolKey, Outcome outcome) public view returns (uint256) {
         LiquidityPool storage liquidityPool = liquidityPools[liquidityPoolKey];
 
         uint256 supply = liquidityPool.sharesBought[outcome];
-        return slope * supply + intercept;
+
+        Outcome contraOutcome =(outcome == Outcome.Outcome1? Outcome.Outcome2 : Outcome.Outcome1);
+        uint256 contraSupply = liquidityPool.sharesBought[contraOutcome];
+
+
+        return supply /(supply + contraSupply);
     }
 
     function getTotalLiquidity(string memory liquidityPoolKey) public view returns (uint256) {

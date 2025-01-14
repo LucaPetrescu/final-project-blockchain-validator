@@ -30,7 +30,7 @@ contract CoreBetting  {
     event BetCreated(uint256 betID, string description);
     event BetPlaced(uint256 marketId, address user, uint256 amount, bool choice);
     event BetResolved(uint256 marketId, uint256 betId, bool outcome);
-    
+
     constructor(address verifierAddress, address liquidityPoolContainerAddress, address oracleAddress) {
         verifier = Verifier(verifierAddress);
         liquidityPoolContainer = LiquidityPoolContainer(payable(liquidityPoolContainerAddress));
@@ -161,8 +161,15 @@ contract CoreBetting  {
         return markets[marketId].bets;
     }
 
-    //function getMarketBetPrices() external view returns ()
-    //function addLiquidity()
+    function getMarketBetPrice(uint256 marketId, uint256 betId, Outcome outcome) external view returns (uint256) {
+        string memory liquidityPoolKey = markets[marketId].bets[betId].liquidityPoolKey;
+        return liquidityPoolContainer.computeOutcomePrice(liquidityPoolKey,outcome);
+
+    }
+    function addLiquidity(uint256 marketId, uint256 betId) external payable {
+        string memory liquidityPoolKey = markets[marketId].bets[betId].liquidityPoolKey;
+        liquidityPoolContainer.buySharesForAllOutcomes(liquidityPoolKey);
+    }
     
 }
 
