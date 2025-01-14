@@ -101,9 +101,9 @@ contract CoreBetting  {
         // Here you would typically update the bet totals based on the choice
         // For example:
         if (choice) {
-            liquidityPoolContainer.buySharesForOutcome {value: msg.value}(market.bets[betId].liquidityPoolKey, Outcome.Outcome1);
+            liquidityPoolContainer.buySharesForOutcome {value: msg.value}(market.bets[betId].liquidityPoolKey, Outcome.Outcome1, msg.sender);
         } else {
-            liquidityPoolContainer.buySharesForOutcome{value: msg.value}(market.bets[betId].liquidityPoolKey, Outcome.Outcome2);
+            liquidityPoolContainer.buySharesForOutcome{value: msg.value}(market.bets[betId].liquidityPoolKey, Outcome.Outcome2, msg.sender);
         }
 
         emit BetPlaced(marketId, msg.sender, msg.value, choice);
@@ -170,26 +170,30 @@ contract CoreBetting  {
     }
     function addLiquidity(uint256 marketId, uint256 betId) external payable {
         string memory liquidityPoolKey = markets[marketId].bets[betId].liquidityPoolKey;
-        liquidityPoolContainer.buySharesForAllOutcomes{value: msg.value}(liquidityPoolKey);
+        liquidityPoolContainer.buySharesForAllOutcomes{value: msg.value}(liquidityPoolKey, msg.sender);
 
         emit LiquidityCreated( marketId, betId, msg.sender, msg.value);
     }
 
     function getReward(uint256 marketId, uint256 betId) external payable {
+        console.log("getReward");
+        console.log(msg.sender);
         string memory liquidityPoolKey = markets[marketId].bets[betId].liquidityPoolKey;
-        liquidityPoolContainer.redeemShares(liquidityPoolKey);
+        liquidityPoolContainer.redeemShares(liquidityPoolKey, msg.sender);
     }
 
     receive() external payable {
         // This function must be declared payable to accept Ether
         // Optionally, handle any accounting or events here
         (bool success, ) = msg.sender.call{value: msg.value}("");
+
         require(success, "Refund failed");
     }
 
     fallback() external payable {
+        console.log("fallback");
         // This function can remain empty or you can add logic for unknown calls.
-        (bool success, ) = msg.sender.call{value: msg.value}("");
+        (bool success, ) = msg.sender.call{value: msg.value/2}("");
         require(success, "Refund failed");
     }
     

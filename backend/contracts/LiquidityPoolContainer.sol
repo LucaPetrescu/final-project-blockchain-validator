@@ -35,30 +35,30 @@ contract LiquidityPoolContainer is ERC20, Ownable {
     }
 
 
-    function buySharesForAllOutcomes(string memory liquidityPoolKey) external payable {
+    function buySharesForAllOutcomes(string memory liquidityPoolKey, address buyer) external payable {
         console.log("buySharesForAllOutcomes", msg.value);
         require(msg.value > 0, "Must send Ether to buy shares");
         LiquidityPool storage liquidityPool = liquidityPools[liquidityPoolKey];
         console.log("totalLiquidity", liquidityPool.totalLiquidity);
 
         // Calculate how many shares to mint for each outcome
-        uint256 shares = msg.value / 3;  // Distribute Ether equally across all outcomes (could be customized)
+        uint256 shares = msg.value / 2;  // Distribute Ether equally across all outcomes (could be customized)
 
         // Mint the same number of shares for each outcome
-        _mint(msg.sender, shares * 3);
+        _mint(buyer, shares * 2);
 
         // Distribute shares to each outcome
         liquidityPool.sharesBought[Outcome.Outcome1] += shares;
         liquidityPool.sharesBought[Outcome.Outcome2] += shares;
 
-        liquidityPool.userShares[msg.sender][Outcome.Outcome1] += shares;
-        liquidityPool.userShares[msg.sender][Outcome.Outcome2] += shares;
+        liquidityPool.userShares[buyer][Outcome.Outcome1] += shares;
+        liquidityPool.userShares[buyer][Outcome.Outcome2] += shares;
 
         // Add liquidity to the contract
         liquidityPool.totalLiquidity += msg.value;
-        liquidityPool.liquidityContributed[msg.sender] += msg.value;
+        liquidityPool.liquidityContributed[buyer] += msg.value;
 
-        emit SharesPurchased(msg.sender, shares, shares);
+        emit SharesPurchased(buyer, shares, shares);
     }
 
     // Function to set the outcome (only owner can do this)
@@ -72,38 +72,40 @@ contract LiquidityPoolContainer is ERC20, Ownable {
     }
 
     // Function for users to redeem their shares if the outcome is known
-    function redeemShares(string memory liquidityPoolKey) external {
+    function redeemShares(string memory liquidityPoolKey, address buyer) external {
         require(currentOutcome != Outcome.None, "Outcome not set");
         uint256 userTotalShares = 0;
 
         LiquidityPool storage liquidityPool = liquidityPools[liquidityPoolKey];
 
         // Determine the total amount of shares the user holds for the winning outcome
-        userTotalShares = liquidityPool.userShares[msg.sender][currentOutcome];
+        userTotalShares = liquidityPool.userShares[buyer][currentOutcome];
 
         require(userTotalShares > 0, "No shares to redeem for the winning outcome");
 
         uint256 totalSharesForOutcome = liquidityPool.sharesBought[currentOutcome];
         uint256 reward = (userTotalShares / totalSharesForOutcome) * liquidityPool.totalLiquidity ;
 
+
         // Transfer the Ether to the user as the reward for the winning outcome
-        require(address(this).balance >= reward /2, "Insufficient contract balance");
-        (bool success, ) = msg.sender.call{value: reward / 2}("");
+        require(address(this).balance >= reward/2 , "Insufficient contract balance");
+        (bool success, bytes memory data ) = msg.sender.call{value: reward/2 }("");
+        console.logBytes(data);
         require(success, "Transfer to contract failed");
 
 
 
         // Burn the user's shares after redemption
-        _burn(msg.sender, userTotalShares);
+        _burn(buyer, userTotalShares);
 
         // Reset the user's shares for the outcome
-        liquidityPool.userShares[msg.sender][currentOutcome] = 0;
+        liquidityPool.userShares[buyer][currentOutcome] = 0;
     }
 
     // Function for liquidity providers to earn fees based on their contribution
-    function withdrawLiquidity(string memory liquidityPoolKey) external {
+    function withdrawLiquidity(string memory liquidityPoolKey, address buyer) external {
         LiquidityPool storage liquidityPool = liquidityPools[liquidityPoolKey];
-        uint256 liquidity = liquidityPool.liquidityContributed[msg.sender];
+        uint256 liquidity = liquidityPool.liquidityContributed[buyer];
         require(liquidity > 0, "No liquidity contributed");
 
         // Calculate the proportion of the total liquidity
@@ -111,12 +113,12 @@ contract LiquidityPoolContainer is ERC20, Ownable {
         uint256 reward = shareOfPool;
 
         // Transfer the reward (fees earned) to the liquidity provider
-        payable(msg.sender).transfer(reward);
+        payable(buyer).transfer(reward);
 
         // Reset the user's liquidity contribution
-        liquidityPool.liquidityContributed[msg.sender] = 0;
+        liquidityPool.liquidityContributed[buyer] = 0;
 
-        emit LiquidityEarned(msg.sender, reward);
+        emit LiquidityEarned(buyer, reward);
     }
 
     // Function to withdraw any unused liquidity (only owner can do this)
@@ -131,7 +133,9 @@ contract LiquidityPoolContainer is ERC20, Ownable {
     }
 
       // Function to buy shares for a specific outcome (Outcome1, Outcome2)
-    function buySharesForOutcome(string memory liquidityPoolKey, Outcome outcome) external payable {
+    function buySharesForOutcome(string memory liquidityPoolKey, Outcome outcome, address buyer) external payable {
+        console.log("buySharesForOutcome");
+        console.log(buyer);
         require(outcome != Outcome.None, "Invalid outcome");
         require(msg.value > 0, "Must send Ether to buy shares");
 
@@ -146,17 +150,17 @@ contract LiquidityPoolContainer is ERC20, Ownable {
         require(shares > 0, "Insufficient value to buy shares");
 
         // Mint the shares based on the calculated price
-        _mint(msg.sender, shares);
+        _mint(buyer, shares);
 
         // Update the shares bought for the specific outcome
         liquidityPool.sharesBought[outcome] += shares;
 
         // Update the user's shares for the specific outcome
-        liquidityPool.userShares[msg.sender][outcome] += shares;
+        liquidityPool.userShares[buyer][outcome] += shares;
 
         // Add liquidity to the contract
         liquidityPool.totalLiquidity += msg.value;
-        liquidityPool.liquidityContributed[msg.sender] += msg.value;
+        liquidityPool.liquidityContributed[buyer] += msg.value;
 
 
         uint256 totalShareCost = price*shares;
@@ -165,11 +169,11 @@ contract LiquidityPoolContainer is ERC20, Ownable {
             
             uint256 refund = netValue - totalShareCost;
 
-            (bool success, bytes memory data) = msg.sender.call{value: refund}("");
+            (bool success, bytes memory data) = buyer.call{value: refund}("");
             require(success, "Refund failed");
         }
 
-        emit SharesPurchased(msg.sender, 
+        emit SharesPurchased(buyer, 
                              outcome == Outcome.Outcome1 ? shares : 0, 
                              outcome == Outcome.Outcome2 ? shares : 0);
     }
