@@ -87,7 +87,11 @@ contract LiquidityPoolContainer is ERC20, Ownable {
         uint256 reward = (userTotalShares / totalSharesForOutcome) * liquidityPool.totalLiquidity ;
 
         // Transfer the Ether to the user as the reward for the winning outcome
-        payable(msg.sender).transfer(reward);
+        require(address(this).balance >= reward /2, "Insufficient contract balance");
+        (bool success, ) = msg.sender.call{value: reward / 2}("");
+        require(success, "Transfer to contract failed");
+
+
 
         // Burn the user's shares after redemption
         _burn(msg.sender, userTotalShares);
@@ -130,7 +134,6 @@ contract LiquidityPoolContainer is ERC20, Ownable {
     function buySharesForOutcome(string memory liquidityPoolKey, Outcome outcome) external payable {
         require(outcome != Outcome.None, "Invalid outcome");
         require(msg.value > 0, "Must send Ether to buy shares");
-        console.log(msg.value);
 
         LiquidityPool storage liquidityPool = liquidityPools[liquidityPoolKey];
 
@@ -161,11 +164,8 @@ contract LiquidityPoolContainer is ERC20, Ownable {
         if(totalShareCost < netValue) {
             
             uint256 refund = netValue - totalShareCost;
-            console.log(refund);
 
-            console.log(address(this).balance);
             (bool success, bytes memory data) = msg.sender.call{value: refund}("");
-            console.logBytes(data);
             require(success, "Refund failed");
         }
 
