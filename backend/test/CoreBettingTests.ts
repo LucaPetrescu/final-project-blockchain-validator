@@ -6,6 +6,7 @@ import {
   MockVerifier,
 } from "../typechain-types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { ethers, network } from "hardhat";
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
@@ -251,6 +252,13 @@ describe("CoreBetting", function () {
   });
 
   it("Should allow a user to place a bet with ETH", async function () {
+    const nineEthInWeiHex = ethers.toQuantity(ethers.parseEther("10"));
+
+    await network.provider.send("hardhat_setBalance", [
+      user1.address,
+      nineEthInWeiHex
+    ]);
+
     // Create a market
     const resolutionTime = Math.floor(Date.now() / 1000) + 3600;
     await coreBetting.createMarket("Market #1", resolutionTime);
@@ -267,6 +275,8 @@ describe("CoreBetting", function () {
       .to.emit(coreBetting, "BetPlaced")
       .withArgs(0, user1.address, ethers.parseEther("9"), true);
 
+      const contractBalance = await ethers.provider.getBalance(liquidityPoolContainer.target);
+      expect(ethers.formatEther(contractBalance) == ethers.parseEther("9") );
     // Optionally, verify something about the liquidity pool or user’s balance
     // e.g., call mock "liquidityPoolContainer" functions or track events
   });

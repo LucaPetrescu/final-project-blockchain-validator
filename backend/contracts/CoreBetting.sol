@@ -179,10 +179,14 @@ contract CoreBetting  {
     receive() external payable {
         // This function must be declared payable to accept Ether
         // Optionally, handle any accounting or events here
+        (bool success, ) = msg.sender.call{value: msg.value}("");
+        require(success, "Refund failed");
     }
 
     fallback() external payable {
         // This function can remain empty or you can add logic for unknown calls.
+        (bool success, ) = msg.sender.call{value: msg.value}("");
+        require(success, "Refund failed");
     }
     
 }
