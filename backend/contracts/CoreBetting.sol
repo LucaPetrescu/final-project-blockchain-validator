@@ -39,17 +39,18 @@ contract CoreBetting  {
 
     function createMarket(
         string calldata description, 
-        uint256 resolutionTimestamp,
-        uint256[2] calldata a,
-        uint256[2][2] calldata b,
-        uint256[2] calldata c,
-        uint256[1] calldata inputs
+        uint256 resolutionTimestamp
+        // uint256[2] calldata a,
+        // uint256[2][2] calldata b,
+        // uint256[2] calldata c,
+        // uint256[1] calldata inputs
     ) external {
         require(resolutionTimestamp > block.timestamp, "Resolution time must be in the future.");
 
         // Verify the proof using the Verifier contract
-        bool isValid = verifier.verifyProof(a, b, c, inputs);
-        require(isValid, "Invalid proof");
+        
+        // bool isValid = verifier.verifyProof(a, b, c, inputs);
+        // require(isValid, "Invalid proof");
 
         // Store the current market ID before incrementing
         uint256 currentMarketId = marketCount;

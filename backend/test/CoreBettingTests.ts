@@ -83,14 +83,7 @@ describe("CoreBetting", function () {
       ]; // Dummy proof inputs
       mockVerifier.setMockResult(true);
 
-      await expect(
-        coreBetting.createMarket(
-          description,
-          resolutionTimestamp,
-
-          ...proof
-        )
-      )
+      await expect(coreBetting.createMarket(description, resolutionTimestamp))
         .to.emit(coreBetting, "MarketCreated")
         .withArgs(0, description, resolutionTimestamp);
 
@@ -115,14 +108,7 @@ describe("CoreBetting", function () {
       ]; // Dummy proof inputs
       mockVerifier.setMockResult(true);
 
-      await expect(
-        coreBetting.createMarket(
-          description,
-          resolutionTimestamp,
-
-          ...proof
-        )
-      )
+      await expect(coreBetting.createMarket(description, resolutionTimestamp))
         .to.emit(coreBetting, "MarketCreated")
         .withArgs(0, description, resolutionTimestamp);
 
@@ -133,14 +119,7 @@ describe("CoreBetting", function () {
       const description2 = "Will team B win?";
       mockVerifier.setMockResult(true);
 
-      await expect(
-        coreBetting.createMarket(
-          description2,
-          resolutionTimestamp,
-
-          ...proof
-        )
-      )
+      await expect(coreBetting.createMarket(description2, resolutionTimestamp))
         .to.emit(coreBetting, "MarketCreated")
         .withArgs(1, description2, resolutionTimestamp);
 
@@ -173,17 +152,12 @@ describe("CoreBetting", function () {
         ],
         [7, 8],
         [9],
-      ]; // Dummy proof inputs
+      ];
 
       mockVerifier.setMockResult(false);
 
       await expect(
-        coreBetting.createMarket(
-          description,
-          resolutionTimestamp,
-
-          ...proof
-        )
+        coreBetting.createMarket(description, resolutionTimestamp)
       ).to.be.revertedWith("Invalid proof");
     });
 
@@ -203,14 +177,7 @@ describe("CoreBetting", function () {
       ]; // Dummy proof inputs
       mockVerifier.setMockResult(true);
 
-      await expect(
-        coreBetting.createMarket(
-          description,
-          resolutionTimestamp,
-
-          ...proof
-        )
-      )
+      await expect(coreBetting.createMarket(description, resolutionTimestamp))
         .to.emit(coreBetting, "MarketCreated")
         .withArgs(0, description, resolutionTimestamp);
 
@@ -254,14 +221,7 @@ describe("CoreBetting", function () {
       ]; // Dummy proof inputs
       mockVerifier.setMockResult(true);
 
-      await expect(
-        coreBetting.createMarket(
-          description,
-          resolutionTimestamp,
-
-          ...proof
-        )
-      )
+      await expect(coreBetting.createMarket(description, resolutionTimestamp))
         .to.emit(coreBetting, "MarketCreated")
         .withArgs(0, description, resolutionTimestamp);
 
@@ -288,14 +248,7 @@ describe("CoreBetting", function () {
       ]; // Dummy proof inputs
       mockVerifier.setMockResult(true);
 
-      await expect(
-        coreBetting.createMarket(
-          description,
-          resolutionTimestamp,
-
-          ...proof
-        )
-      )
+      await expect(coreBetting.createMarket(description, resolutionTimestamp))
         .to.emit(coreBetting, "MarketCreated")
         .withArgs(0, description, resolutionTimestamp);
 

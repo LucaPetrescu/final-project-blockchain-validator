@@ -8,11 +8,13 @@ exports.generateProof = async () => {
   try {
     const { proof, publicSignals } = await snarkjs.groth16.fullProve(
       {
-        secret: process.env.SECRET,
+        secret: 123456,
       },
       "circuit_js/circuit.wasm",
       "circuit/circuit_0000.zkey"
     );
+    console.log(publicSignals);
+    console.log(proof);
 
     return { proof, publicSignals };
   } catch (error) {

@@ -18,7 +18,7 @@ const contractAddress = process.env.CORE_BETTING_CONTRACT_ADDRESS;
 const coreBetting = new ethers.Contract(contractAddress, abi, wallet);
 
 exports.createMarket = async (req, res) => {
-  const { description, resolutionTimestamp, deadline } = req.body;
+  const { description, resolutionTimestamp } = req.body;
 
   try {
     const futureTime = new Date();
@@ -27,26 +27,19 @@ exports.createMarket = async (req, res) => {
       futureTime.getTime() / 1000
     );
 
-    const futureDeadline = new Date();
-    futureDeadline.setHours(futureDeadline.getHours() + deadline);
-    const deadlineConverted = Math.floor(futureDeadline.getTime() / 1000);
+    // const { proof, publicSignals } = await generateProof();
 
-    const { proof, publicSignals } = await generateProof();
-
-    console.log(proof);
-
-    const a = proof.pi_a.slice(0, 2);
-    const b = [proof.pi_b[0].slice(0, 2), proof.pi_b[1].slice(0, 2)];
-    const c = proof.pi_c.slice(0, 2);
+    // const a = proof.pi_a.slice(0, 2);
+    // const b = [proof.pi_b[0].slice(0, 2), proof.pi_b[1].slice(0, 2)];
+    // const c = proof.pi_c.slice(0, 2);
 
     const tx = await coreBetting.createMarket(
       description,
-      resolutionTimestampConverted,
-      deadlineConverted,
-      a,
-      b,
-      c,
-      publicSignals
+      resolutionTimestampConverted
+      // a,
+      // b,
+      // c,
+      // publicSignals
     );
     await tx.wait();
 
@@ -69,11 +62,27 @@ exports.placeBet = async (req, res) => {
   }
 };
 
+exports.createBet = async (req, res) => {
+  const { marketId, description } = req.body;
+  try {
+    const tx = await coreBetting.createBet(description, marketId);
+    await tx.wait();
+  } catch (error) {
+    res.status(500).send({ success: false, error: error.message });
+  }
+};
+
 exports.getMarkets = async (req, res) => {
   try {
     const tx = await coreBetting.getMarkets();
-    await tx.wait();
-    res.send({ success: true, txHash: tx.hash });
+
+    const markets = tx.map((market) => ({
+      name: market[0],
+      resolutionTimestamp: market[1].toString(),
+      marketID: market[2].toString(),
+    }));
+    console.log(markets);
+    res.send({ success: true, markets });
   } catch (error) {
     res.status(500).send({ success: false, error: error.message });
   }
@@ -84,7 +93,7 @@ exports.getMarket = async (req, res) => {
 
   try {
     const tx = await coreBetting.getMarket(marketId);
-    await tx.wait();
+
     res.send({ success: true, txHash: tx.hash });
   } catch (error) {
     res.status(500).send({ success: false, error: error.message });

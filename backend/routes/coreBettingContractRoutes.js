@@ -1,12 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const coreBettingContractAddress = require("../controllers/coreBettingContractController");
+const coreBettingContractController = require("../controllers/coreBettingContractController");
 
-router.post("/createMarket", coreBettingContractAddress.createMarket);
-router.post("/placeBet", coreBettingContractAddress.placeBet);
+router.post("/createMarket", coreBettingContractController.createMarket);
+router.post("/placeBet", coreBettingContractController.placeBet);
+router.post("/createBet", coreBettingContractController.createBet);
 
-router.get("/getMarkets", coreBettingContractAddress.getMarkets);
-router.get("/getMarket", coreBettingContractAddress.getMarket);
-router.get("/getMarketBets", coreBettingContractAddress.getMarketBets);
+router.get("/getMarkets", coreBettingContractController.getMarkets);
+router.get("/getMarket", coreBettingContractController.getMarket);
+router.get("/getMarketBets", coreBettingContractController.getMarketBets);
 
 module.exports = router;
