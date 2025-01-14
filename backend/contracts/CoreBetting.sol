@@ -170,6 +170,11 @@ contract CoreBetting  {
         string memory liquidityPoolKey = markets[marketId].bets[betId].liquidityPoolKey;
         liquidityPoolContainer.buySharesForAllOutcomes(liquidityPoolKey);
     }
+
+    function getReward(uint256 marketId, uint256 betId) external payable {
+        string memory liquidityPoolKey = markets[marketId].bets[betId].liquidityPoolKey;
+        liquidityPoolContainer.redeemShares(liquidityPoolKey);
+    }
     
 }
 
