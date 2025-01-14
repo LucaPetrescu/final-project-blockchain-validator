@@ -132,6 +132,7 @@ contract CoreBetting  {
         (bool outcome, bool finalized) = oracle.getConsensus(betId);
         require(finalized, "Oracle consensus not reached");
 
+
         market.bets[betId].resolved = true;
         market.bets[betId].outcome = outcome;
 

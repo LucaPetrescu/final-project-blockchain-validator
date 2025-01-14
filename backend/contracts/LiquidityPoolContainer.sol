@@ -183,7 +183,7 @@ contract LiquidityPoolContainer is ERC20, Ownable {
         Outcome contraOutcome =(outcome == Outcome.Outcome1? Outcome.Outcome2 : Outcome.Outcome1);
         uint256 contraSupply = liquidityPool.sharesBought[contraOutcome];
 
-        if(supply + contraSupply == 0) {
+        if(supply == 0 || supply + contraSupply == 0) {
             return scalingFactor / 2;
         }
 

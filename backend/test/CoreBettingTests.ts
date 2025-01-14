@@ -306,6 +306,75 @@ describe("CoreBetting", function () {
       const contractBalance = await ethers.provider.getBalance(liquidityPoolContainer.target);
       expect(ethers.formatEther(contractBalance) == ethers.parseEther("9") );
   });
+
+  it("Should let only the user with the winning outcome claim the reward", async function () {
+    const nineEthInWeiHex = ethers.toQuantity(ethers.parseEther("3"));
+
+    await network.provider.send("hardhat_setBalance", [
+      user1.address,
+      nineEthInWeiHex
+    ]);
+    await network.provider.send("hardhat_setBalance", [
+      user2.address,
+      nineEthInWeiHex
+    ]);
+
+    // 1. Create a market
+    const resolutionTime = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+    await coreBetting.createMarket("Sample Market", resolutionTime);
+
+    // 2. Create a bet in that market
+    await coreBetting.createBet("Sample Bet", 0); // betId = 0 in marketId = 0
+
+    // 3. Place bets: 'winner' bets on outcome = true, 'loser' bets on outcome = false
+    //    We'll assume outcome=true is the winning side
+    await coreBetting.connect(user1).placeBet(0, 0, true, {
+      value: ethers.parseEther("2.0"),
+    });
+    await coreBetting.connect(user2).placeBet(0, 0, false, {
+      value: ethers.parseEther("2.0"),
+    });
+
+    // 4. Advance time to resolutionTime (in Hardhat we can just manipulate the evm)
+    await ethers.provider.send("evm_increaseTime", [3600]); // jump 1 hour
+    await ethers.provider.send("evm_mine", []);
+
+    oracle.endStakingPeriod(0);
+    console.log("ended staking period");
+
+    // 5. Oracle sets the outcome
+    //    The Oracle in your code calls `vote` multiple times, or in a real system
+    //    obtains a consensus. We'll just do a mock call to finalize it to 'true'.
+    await coreBetting.voteOnBetOutcome(0, 0, true);
+
+    // 6. We call `resolveBet` to finalize the bet outcome
+    await coreBetting.resolveBet(0, 0);
+
+    // 7. The 'loser' tries to call getReward on the losing side
+    //    Depending on your logic, this should revert OR do nothing.
+    //    We'll assume it reverts.
+    await expect(
+      coreBetting.connect(user1).getReward(0, 0)
+    ).to.be.revertedWith("some revert message or logic in liquidityPoolContainer");
+
+    // 8. The 'winner' calls getReward and should succeed
+    //    If your actual logic in `redeemShares` returns some tokens or changes a mapping,
+    //    you should check that it actually credited the 'winner'.
+    await expect(coreBetting.connect(user2).getReward(0, 0))
+      .to.emit(liquidityPoolContainer, "SharesRedeemed") // or some other event
+      .withArgs(
+        // you'd typically see arguments with winner's address, bet key, etc.
+        user2.address
+      );
+
+    // Optionally, if your 'redeemShares' modifies an internal record of how many
+    // shares or ETH the user got back, you can verify that with calls to
+    // liquidityPoolContainer or by checking the user's new ETH balance
+    // e.g., a mock approach:
+    //
+    // const winnerShares = await liquidityPoolContainer.userShares(winner.address);
+    // expect(winnerShares).to.equal(0);
+  });
 /*
   it("Should settle a bet correctly", async function () {
     const betId = await setupBet();
@@ -318,22 +387,6 @@ describe("CoreBetting", function () {
     expect(betDetails.state).to.equal(2); // Settled state
   });
 
-  it("Should cancel a bet and refund participants", async function () {
-    const betId = await setupBet();
-    await coreBetting.connect(user2).takePosition(betId, false);
-
-    await expect(coreBetting.connect(user1).cancelBet(betId))
-      .to.emit(coreBetting, "BetCancelled")
-      .withArgs(betId);
-
-    const betDetails = await coreBetting.getBetDetails(betId);
-    expect(betDetails.state).to.equal(3); // Cancelled state
-
-    const user1Balance = await token.balanceOf(user1.address);
-    const user2Balance = await token.balanceOf(user2.address);
-    expect(user1Balance).to.equal(ethers.parseEther("1000"));
-    expect(user2Balance).to.equal(ethers.parseEther("1000"));
-  });
 
   it("Should not allow settling a bet before it is active", async function () {
     const betId = await setupBet();
