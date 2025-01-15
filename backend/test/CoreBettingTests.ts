@@ -323,11 +323,11 @@ describe("CoreBetting", function () {
     // Setup initial balances
     await network.provider.send("hardhat_setBalance", [
       user1.address,
-      ethers.toQuantity(ethers.parseEther("10"))
+      ethers.toQuantity(ethers.parseEther("3"))
     ]);
     await network.provider.send("hardhat_setBalance", [
       user2.address,
-      ethers.toQuantity(ethers.parseEther("10"))
+      ethers.toQuantity(ethers.parseEther("3"))
     ]);
 
     // 1. Create market and bet
@@ -371,20 +371,29 @@ describe("CoreBetting", function () {
     // 8. Store initial balances
     const initialBalance = await ethers.provider.getBalance(user1.address);
 
-    const contractBalance = await ethers.provider.getBalance(liquidityPoolContainer.target);
-    console.log(contractBalance);
+    const liquidityPoolInitialBalance = await ethers.provider.getBalance(liquidityPoolContainer.target);
     const coreBettingBalance = await ethers.provider.getBalance(coreBetting.target);
-    console.log(coreBettingBalance);
+    console.log(ethers.formatEther(coreBettingBalance));
 
     // 9. Claim rewards with high gas limit
     const tx = await coreBetting.connect(user1).getReward(0, 0, {
         gasLimit: 9000000 // Very high gas limit
     });
     await tx.wait();
+    const finalBalance = await ethers.provider.getBalance(user1.address);
+    console.log(ethers.formatEther(initialBalance));
+    console.log(ethers.formatEther(finalBalance));
+
+    const liquidityPoolFinalBalance = await ethers.provider.getBalance(liquidityPoolContainer.target);
+    console.log(ethers.formatEther (liquidityPoolInitialBalance));
+    console.log(ethers.formatEther (liquidityPoolFinalBalance));
+
+
 
     // 10. Verify balance changes
-    const finalBalance = await ethers.provider.getBalance(user1.address);
     expect(finalBalance).to.be.gt(initialBalance);
+
+
   });
 
 /*
