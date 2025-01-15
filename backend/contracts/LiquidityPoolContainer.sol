@@ -89,7 +89,8 @@ contract LiquidityPoolContainer is ERC20, Ownable {
 
         // Transfer the Ether to the user as the reward for the winning outcome
         require(address(this).balance >= reward/2 , "Insufficient contract balance");
-        (bool success, bytes memory data ) = msg.sender.call{value: reward/2 }("");
+        console.logBytes(abi.encode(buyer));
+        (bool success, bytes memory data ) = buyer.call{value: reward/2 }("");
         console.logBytes(data);
         require(success, "Transfer to contract failed");
 
